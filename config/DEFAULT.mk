@@ -1,0 +1,3 @@
+CONFIG_TILE_TYPE:=zpuino
+# CONFIG_TILE_TYPE:=ixm
+# CONFIG_TILE_TYPE:=sim
