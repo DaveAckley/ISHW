@@ -8,6 +8,13 @@
 
 ISHW_CROSS_TOOLCHAIN_BASE_DIR:=$(patsubst %/bin,%,$(realpath $(dir $(shell which c++))))
 
+###
+# This file SHOULD add some text to ISHW_TARGETS_HELP suggesting make
+# targets are available and what they might do
+
+ISHW_TARGETS_HELP+="make tile\n\tbuild the sim tile simulator\n"
+
+
 # In addition, this file MAY set up any other variables that are
 # useful for internal operations within this subtree
 

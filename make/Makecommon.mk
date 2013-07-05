@@ -36,4 +36,3 @@ check:	$(ISHW_CHECK_TARGETS)
 
 report:	$(ISHW_REPORT_TARGETS)
 	@echo Component configurations look plausible
-
