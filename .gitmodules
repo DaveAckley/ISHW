@@ -1,0 +1,3 @@
+[submodule "components/tiles/zpuino/board"]
+	path = components/tiles/zpuino/board
+	url = https://github.com/DaveAckley/ZPUino-HDL.git
