@@ -23,7 +23,7 @@ help:	FORCE
 	@echo '  make report   -- print some configuration info (implies check)'
 	@echo ''
 	@echo 'Component-specific target help:'
-	@echo $(ISHW_TARGETS_HELP)
+	@echo -e $(ISHW_TARGETS_HELP)
 
 include $(wildcard $(ISHW_COMPONENT_DIR)/*/config.mk)
 

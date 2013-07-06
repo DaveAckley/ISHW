@@ -1,3 +1,6 @@
+## Let's not screw around with sh.
+SHELL := /bin/bash
+
 ## This delayed evaluation rule, when evaluated, gives the directory
 ## of the makefile it was evaluated in.  In general it should be used
 ## only on the right hand side of := variable assignments (see
