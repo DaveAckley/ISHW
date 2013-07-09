@@ -1,10 +1,12 @@
-## Let's not screw around with sh.
-SHELL := /bin/bash
+## Let's not screw around with sh.  For example, the Xilinx settings
+## scripts seem to die with sh, for some reason.
+SHELL:=/bin/bash
 
-## This delayed evaluation rule, when evaluated, gives the directory
-## of the makefile it was evaluated in.  In general it should be used
-## only on the right hand side of := variable assignments (see
-## e.g. ISHW_MAKE_DIR, below)
+## This delayed evaluation rule, when evaluated BEFORE ANY INCLUDES in
+## a makefile, gives the directory of the makefile it was evaluated
+## in.  In general it should be used only on the right hand side of :=
+## variable assignments (see e.g. ISHW_MAKE_DIR, below), so that its
+## value is forced at clearly understood times.
 ISHW_THIS_DIR=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
 ## Find our face

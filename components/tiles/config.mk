@@ -3,10 +3,8 @@ ISHW_TARGETS_HELP+="\nTILE TARGETS (type $(CONFIG_TILE_TYPE))\n"
 ISHW_TILES_DIR:=$(ISHW_COMPONENT_DIR)/tiles
 include $(ISHW_TILES_DIR)/$(CONFIG_TILE_TYPE)/config.mk
 
-ISHW_CROSS_TOOLCHAIN_BIN_DIR:=$(ISHW_CROSS_TOOLCHAIN_BASE_DIR)/bin
-
 check-tiles-path:	FORCE 
-	@x=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR)/c++ ; \
+	@x=$(ISHW_CROSS_TOOLCHAIN_PREFIX)c++ ; \
 	if [ -x $$x ]; then \
 	  exit 0; \
 	else \

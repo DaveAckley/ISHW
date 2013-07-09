@@ -1,9 +1,10 @@
-# This file MUST set up ISHW_CROSS_TOOLCHAIN_BASE_DIR to point to the
-# the base directory of the cross compilation toolchain appropriate to
-# this type of tile.  For ISHW to find them, the standard cross tools
-# (c++, ld, ar, ...) must be in $(ISHW_CROSS_TOOLCHAIN_BASE_DIR)/bin
+# This file MUST set up ISHW_CROSS_TOOLCHAIN_PREFIX to point to the
+# cross compilation toolchain appropriate to this type of tile.  The
+# standard cross tools (c++, ld, ar, ...) must exist as
+# $(ISHW_CROSS_TOOLCHAIN_PREFIX)c++ etc (note lack of '/' before c++:
+# The prefix must include that if needed).
 
-ISHW_CROSS_TOOLCHAIN_BASE_DIR:=$(ISHW_BASE_DIR)/components/tiles/ixm/cross/arm-none-eabi
+ISHW_CROSS_TOOLCHAIN_PREFIX:=$(ISHW_BASE_DIR)/components/tiles/ixm/cross/arm-none-eabi/bin/
 
 
 # In addition, this file MAY set up any other variables that are
