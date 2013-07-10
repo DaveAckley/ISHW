@@ -1,6 +1,6 @@
 ###
 # First, capture this directory path
-_TILES_SIM_DIR:=$(ISHW_THIS_DIR)
+_TILES_SIM.DIR:=$(ISHW_THIS_DIR)
 
 ###
 # Every tiles/*/config.mk file MUST set up ISHW_CROSS_TOOLCHAIN_PREFIX

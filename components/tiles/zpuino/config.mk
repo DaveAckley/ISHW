@@ -1,6 +1,6 @@
 ###
 # First, capture this directory path
-_TILES_ZPUINO_DIR:=$(ISHW_THIS_DIR)
+_TILES_ZPUINO.DIR:=$(ISHW_THIS_DIR)
 
 ###
 # Every tiles/*/config.mk file MUST set up ISHW_CROSS_TOOLCHAIN_PREFIX
@@ -9,28 +9,28 @@ _TILES_ZPUINO_DIR:=$(ISHW_THIS_DIR)
 # $(ISHW_CROSS_TOOLCHAIN_PREFIX)c++ etc (note lack of '/' before c++:
 # The prefix must include that if needed).
 
-ISHW_CROSS_TOOLCHAIN_BIN_DIR:=$(_TILES_ZPUINO_DIR)/cross/pristine/3.4.2/bin
+ISHW_CROSS_TOOLCHAIN_BIN_DIR:=$(_TILES_ZPUINO.DIR)/cross/pristine/3.4.2/bin
 ISHW_CROSS_TOOLCHAIN_PREFIX:=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR)/zpu-elf-
 
 ISHW_CROSS_BUILD_DIR:=$(ISHW_BUILD_BASE_DIR)/components/tiles/zpuino
 
-ISHW_CROSS_INCLUDES+=-I$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino
+ISHW_CROSS_INCLUDES+=-I$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino
 ISHW_CROSS_CFLAGS:=-DZPU -DZPUINO_ACCEL -Wall -O2 -fno-reorder-blocks -fno-reorder-blocks-and-partition -fno-prefetch-loop-arrays -fno-gcse -ffunction-sections -fdata-sections -nostartfiles -mmult -mdiv -mno-callpcrel -mno-pushspadd -mno-poppcrel -DARDUINO=152 -D__ZPUINO_PAPILIO_PRO__ -DBOARD_ID=0xA5041700 -DBOARD_MEMORYSIZE=0x800000 -nostartfiles
 ISHW_CROSS_CPPFLAGS:=-fno-exceptions -fno-rtti $(ISHW_CROSS_CFLAGS)
 ISHW_CROSS_ASMFLAGS+= -DASSEMBLY $(ISHW_CROSS_CFLAGS)
 ISHW_CROSS_ARFLAGS+=crs
-ISHW_CROSS_LDFLAGS+=-O2 -nostartfiles -Wl,-T -Wl,$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/zpuino.lds -Wl,--relax -Wl,--gc-sections
+ISHW_CROSS_LDFLAGS+=-O2 -nostartfiles -Wl,-T -Wl,$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/zpuino.lds -Wl,--relax -Wl,--gc-sections
 ISHW_CROSS_OBJCOPYFLAGS+=-O binary
 
-ISHW_CROSS_ASM_SOURCES+=$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/start.S
-ISHW_CROSS_ASM_SOURCES+=$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/zpuino-accel.S
-ISHW_CROSS_C_SOURCES+=$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/crt-c.c
-ISHW_CROSS_CPP_SOURCES+=$(wildcard $(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/*.cpp)
-ISHW_CROSS_LD_SOURCES+=$(_TILES_ZPUINO_DIR)/core/zpu20/cores/zpuino/zpuino.lds
+ISHW_CROSS_ASM_SOURCES+=$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/start.S
+ISHW_CROSS_ASM_SOURCES+=$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/zpuino-accel.S
+ISHW_CROSS_C_SOURCES+=$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/crt-c.c
+ISHW_CROSS_CPP_SOURCES+=$(wildcard $(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/*.cpp)
+ISHW_CROSS_LD_SOURCES+=$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino/zpuino.lds
 
-ISHW_CROSS_ASM_OBJS:=$(patsubst $(_TILES_ZPUINO_DIR)/%.S,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_ASM_SOURCES))
-ISHW_CROSS_C_OBJS:=$(patsubst $(_TILES_ZPUINO_DIR)/%.c,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_C_SOURCES))
-ISHW_CROSS_CPP_OBJS:=$(patsubst $(_TILES_ZPUINO_DIR)/%.cpp,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_CPP_SOURCES))
+ISHW_CROSS_ASM_OBJS:=$(patsubst $(_TILES_ZPUINO.DIR)/%.S,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_ASM_SOURCES))
+ISHW_CROSS_C_OBJS:=$(patsubst $(_TILES_ZPUINO.DIR)/%.c,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_C_SOURCES))
+ISHW_CROSS_CPP_OBJS:=$(patsubst $(_TILES_ZPUINO.DIR)/%.cpp,$(ISHW_CROSS_BUILD_DIR)/%.o,$(ISHW_CROSS_CPP_SOURCES))
 
 ISHW_CROSS_OBJS:=$(ISHW_CROSS_CPP_OBJS) $(ISHW_CROSS_C_OBJS) $(ISHW_CROSS_ASM_OBJS)
 
@@ -54,7 +54,7 @@ ISHW_TARGETS_HELP+="make zpu-core-library\n\tbuild libzpucore.a, containing low-
 # variables and targets MUST use a prefix formed by '_' plus the path
 # below 'components' (e.g., _tiles_zpuino_foo, _TILES_ZPUINO_BAR)
 
-_TILES_ZPUINO_BOARD_DIR:=$(_TILES_ZPUINO_DIR)/board/zpu/hdl/zpuino/boards/papilio-pro/S6LX9
+_TILES_ZPUINO.BOARD_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl/zpuino/boards/papilio-pro/S6LX9
 
 ## ADDITIONAL TOOL WE NEED AND ASSOCIATED TARGETS
 ISHW_CHECK_TARGETS+=check-synth-path
@@ -83,7 +83,7 @@ $(ISHW_CROSS_BUILD_DIR)/libzpucore.a:	$(ISHW_CROSS_BUILD_DIR)/.exists $(ISHW_CRO
 
 generate-bootloader:	FORCE
 	@echo --- Generating bootloader for $(BIN_FILE_NAME)
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	make -C ../../../bootloader/ -f Makefile.sim clean  > bootloader-generation.log 2>&1 ;\
 	make -C ../../../bootloader/ -f Makefile.sim SKETCHBIN=$(BIN_FILE_NAME)  >> bootloader-generation.log 2>&1;\
@@ -91,12 +91,12 @@ generate-bootloader:	FORCE
 
 copy-files:	generate-bootloader
 	@echo --- Copying files
-	@cp $(_TILES_ZPUINO_BOARD_DIR)/../../../bootloader/bootloader-sim.vhd $(_TILES_ZPUINO_BOARD_DIR)
-	@cp $(_TILES_ZPUINO_BOARD_DIR)/../../../bootloader/sdram.srec $(_TILES_ZPUINO_BOARD_DIR)
+	@cp $(_TILES_ZPUINO.BOARD_DIR)/../../../bootloader/bootloader-sim.vhd $(_TILES_ZPUINO.BOARD_DIR)
+	@cp $(_TILES_ZPUINO.BOARD_DIR)/../../../bootloader/sdram.srec $(_TILES_ZPUINO.BOARD_DIR)
 
 synth:	report-synth-path
 	@echo --- Starting synthesis at `date`
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	start=$$(date +"%s")                                                           ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	. "$(ZPUINO_SYNTH_PATH)/ISE/.settings64.sh" "$(ZPUINO_SYNTH_PATH)/ISE"         ;\
@@ -108,24 +108,24 @@ synth:	report-synth-path
 
 rebuild-test-bench:	copy-files
 	@echo --- Rebuilding testbench
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	export XILINX=$(ZPUINO_SYNTH_PATH)/ISE                                         ;\
 	make -f Makefile.sim > rebuild-test-bench.log 2>&1                             ;\
 	echo "  Wrote" `wc -c <rebuild-test-bench.log` bytes to rebuild-test-bench.log
 
 run-fpga-sim:	rebuild-test-bench
 	@echo --- Running testbench
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
-	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=1000us
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
+	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=500us
 
 sim-clean:	FORCE
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	make -f Makefile.sim clean
 
 synth-clean:	FORCE
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	make clean
 
 synth-realclean:	synth-clean
-	@cd $(_TILES_ZPUINO_BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	make -C ../../../bootloader/ clean

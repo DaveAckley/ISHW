@@ -1,10 +1,14 @@
+###
+# First, capture this directory path
+_TILES.DIR:=$(ISHW_THIS_DIR)
+
+_TILES.INCLUDE_DIR:=$(_TILES.DIR)/include
+
 ISHW_TARGETS_HELP+="\nTILE TARGETS (type $(CONFIG_TILE_TYPE))\n"
 
-ISHW_TILES_DIR:=$(ISHW_COMPONENT_DIR)/tiles
-ISHW_TILE_INCLUDE_DIR:=$(ISHW_COMPONENT_DIR)/tiles/include
-include $(ISHW_TILES_DIR)/$(CONFIG_TILE_TYPE)/config.mk
+include $(_TILES.DIR)/$(CONFIG_TILE_TYPE)/config.mk
 
-ISHW_CROSS_INCLUDES+=-I$(ISHW_TILES_DIR)/include
+ISHW_CROSS_INCLUDES+=-I$(_TILES.INCLUDE_DIR)
 
 check-tiles-path:	FORCE 
 	@x=$(ISHW_CROSS_TOOLCHAIN_PREFIX)c++ ; \
