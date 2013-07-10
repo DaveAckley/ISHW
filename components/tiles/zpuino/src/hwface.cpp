@@ -1,0 +1,12 @@
+#include "hwface.h"
+
+extern const FaceDescriptor faceInfo[FACE_COUNT] = {
+  { "NT", FACE_NT, {1, NT_CKOM, NT_LCKI, NT_LCKO, NT_MISO, NT_MOSI }},
+  { "NE", FACE_NE, {1, NE_CKOM, NE_LCKI, NE_LCKO, NE_MISO, NE_MOSI }},
+  { "ET", FACE_ET, {0, ET_CKIS, ET_LCKI, ET_LCKO, ET_MISO, ET_MOSI }},
+  { "SE", FACE_SE, {0, SE_CKIS, SE_LCKI, SE_LCKO, SE_MISO, SE_MOSI }},
+  { "ST", FACE_ST, {0, ST_CKIS, ST_LCKI, ST_LCKO, ST_MISO, ST_MOSI }},
+  { "SW", FACE_SW, {0, SW_CKIS, SW_LCKI, SW_LCKO, SW_MISO, SW_MOSI }},
+  { "WT", FACE_WT, {1, WT_CKOM, WT_LCKI, WT_LCKO, WT_MISO, WT_MOSI }},
+  { "NW", FACE_NW, {1, NW_CKOM, NW_LCKI, NW_LCKO, NW_MISO, NW_MOSI }},
+};

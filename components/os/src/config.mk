@@ -10,7 +10,7 @@ _OS_SRC.DIR:=$(ISHW_THIS_DIR)
 
 ISHW_TARGETS_HELP+="make build-os\n\tbuild the OS library archive\n"
 
-ISHW_CROSS_INCLUDES+=-I$(_OS_INCLUDE_DIR)
+ISHW_CROSS_INCLUDES+=-I$(_OS.INCLUDE_DIR)
 
 ###
 # This file MAY set up any other variables and targets that are useful

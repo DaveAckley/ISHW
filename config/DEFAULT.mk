@@ -6,4 +6,5 @@ endif
 
 ifeq ($(CONFIG_TILE_TYPE),zpuino)
   ZPUINO_SYNTH_PATH:=/open/ackley/14.4/ISE_DS
+  ZPUINO_DOWNLOAD_DEVICE:=/dev/ttyUSB1
 endif

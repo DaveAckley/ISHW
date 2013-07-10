@@ -1,0 +1,30 @@
+##############################################################
+zpuino15_papilio_one500.name=ZPUino 2.0 on Papilio One (500) board
+zpuino15_papilio_one500.boardid=0xa5010f00
+zpuino15_papilio_one500.upload.protocol=zpuino-serial
+zpuino15_papilio_one500.upload.maximum_size=27648
+zpuino15_papilio_one500.upload.size_sections=all
+zpuino15_papilio_one500.upload.speed=1000000
+zpuino15_papilio_one500.upload.tool=zpuinoprogrammer
+zpuino15_papilio_one500.build.f_cpu=96000000L
+zpuino15_papilio_one500.build.core=zpuino
+zpuino15_papilio_one500.build.mcu=zpu
+zpuino15_papilio_one500.build.ldscript=zpuelf.lds
+zpuino15_papilio_one500.build.pins=standard
+zpuino15_papilio_one500.build.toolchain=zpu
+zpuino15_papilio_one500.build.extra_flags=-D__ZPUINO_PAPILIO_ONE__ -DZPU20 -DBOARD_ID=0xA5010F00 -DBOARD_MEMORYSIZE=0x8000 -D__S3E_500__ -nostartfiles
+zpuino15_papilio_one500.build.extraSflags=-DBOARD_ID=0xA5010F00 -DZPU20
+##############################################################
+zpuino20_papilio_prolx9v.name=ZPUino on Papilio Pro (LX9)
+zpuino20_papilio_prolx9v.boardid=0xA5041700
+zpuino20_papilio_prolx9v.upload.protocol=zpuino-serial
+zpuino20_papilio_prolx9v.upload.maximum_size=8388608
+zpuino20_papilio_prolx9v.upload.size_sections=all
+zpuino20_papilio_prolx9v.upload.speed=115200
+zpuino20_papilio_prolx9v.upload.tool=zpuinoprogrammer
+zpuino20_papilio_prolx9v.build.f_cpu=96000000L
+zpuino20_papilio_prolx9v.build.core=zpuino
+zpuino20_papilio_prolx9v.build.mcu=zpu
+zpuino20_papilio_prolx9v.build.toolchain=zpu
+zpuino20_papilio_prolx9v.build.extra_flags=-D__ZPUINO_PAPILIO_PRO__ -DBOARD_ID=0xA5041700 -DBOARD_MEMORYSIZE=0x800000 -nostartfiles
+zpuino20_papilio_prolx9v.build.extraSflags=-DBOARD_ID=0xA5041700

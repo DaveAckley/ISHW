@@ -1,0 +1,14 @@
+##############################################################
+zpuino_papilio_prolx9v_zcorev3.name=ZPUino (ZCoreV3) on Papilio Pro (LX9)
+zpuino_papilio_prolx9v_zcorev3.boardid=0xB4041700
+zpuino_papilio_prolx9v_zcorev3.upload.protocol=zpuino-serial
+zpuino_papilio_prolx9v_zcorev3.upload.maximum_size=8388608
+zpuino_papilio_prolx9v_zcorev3.upload.size_sections=all
+zpuino_papilio_prolx9v_zcorev3.upload.speed=115200
+zpuino_papilio_prolx9v_zcorev3.tool=zpuinoprogrammer
+zpuino_papilio_prolx9v_zcorev3.build.f_cpu=80000000L
+zpuino_papilio_prolx9v_zcorev3.build.core=zpuino
+zpuino_papilio_prolx9v_zcorev3.build.mcu=mcu
+zpuino_papilio_prolx9v_zcorev3.build.toolchain=zpu
+zpuino_papilio_prolx9v_zcorev3.build.extra_flags=-D__ZPUINO_PAPILIO_PRO__ -DCLK_FREQ=80000000 -DBOARD_ID=0xB4041700 -DBOARD_MEMORYSIZE=0x800000 -nostartfiles
+zpuino_papilio_prolx9v_zcorev3.build.extraSflags=-DBOARD_ID=0xB4041700

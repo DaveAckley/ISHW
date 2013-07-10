@@ -1,0 +1,73 @@
+
+# ZPU compile variables
+# --------------------- 
+
+name=ZPUino 2.0 (32-bits) Boards
+compiler.path={runtime.ide.path}/hardware/tools/zpu/bin/
+compiler.c.cmd=zpu-elf-gcc
+compiler.c.flags=-c -DZPU -DZPUINO_ACCEL -Wall -O2 -fno-reorder-blocks  -fno-reorder-blocks-and-partition -fno-prefetch-loop-arrays  -fno-gcse -ffunction-sections -fdata-sections -nostartfiles -mmult -mdiv -mno-callpcrel -mno-pushspadd -mno-poppcrel
+compiler.c.elf.cmd=zpu-elf-g++
+compiler.c.elf.flags=-O2 -nostartfiles -Wl,-T -Wl,{build.core.path}/zpuino.lds -Wl,--relax -Wl,--gc-sections
+compiler.S.flags=-c -g -assembler-with-cpp
+compiler.cpp.cmd=zpu-elf-g++
+compiler.cpp.flags=-c -fno-exceptions -fno-rtti -DZPU -DZPUINO_ACCEL -Wall -O2 -fno-reorder-blocks  -fno-reorder-blocks-and-partition -fno-prefetch-loop-arrays  -fno-gcse -ffunction-sections -fdata-sections -nostartfiles -mmult -mdiv -mno-callpcrel -mno-pushspadd -mno-poppcrel
+compiler.ar.cmd=zpu-elf-ar
+compiler.as.cmd=zpu-elf-as
+compiler.ar.flags=rcs
+compiler.objcopy.cmd=zpu-elf-objcopy
+compiler.objcopy.eep.flags=
+compiler.elf2hex.flags=-O binary
+compiler.elf2hex.cmd=zpu-elf-objcopy
+compiler.ldflags=-O2 -nostartfiles -Wl,-T -Wl,{build.core.path}zpuino.lds -Wl,--relax -Wl,--gc-sections
+compiler.size.cmd=zpu-elf-size
+compiler.smallfs.cmd=mksmallfs
+compiler.define=
+# this can be overriden in boards.txt
+build.extra_flags=
+
+# ZPU compile patterns
+# ---------------------
+
+## Compile c files
+recipe.c.o.pattern="{compiler.path}{compiler.c.cmd}" {compiler.c.flags} -D{software}={runtime.ide.version} {build.extra_flags} {includes} "{source_file}" -o "{object_file}"
+
+## Compile S files
+recipe.S.o.pattern="{compiler.path}{compiler.c.cmd}" -DASSEMBLY {compiler.c.flags} -D{software}={runtime.ide.version} {build.extra_flags} {includes} "{source_file}" -o "{object_file}"
+
+## Compile c++ files
+recipe.cpp.o.pattern="{compiler.path}{compiler.cpp.cmd}" {compiler.cpp.flags} -D{software}={runtime.ide.version} {build.extra_flags} {includes} "{source_file}" -o "{object_file}"
+
+## Create archives
+recipe.ar.pattern="{compiler.path}{compiler.ar.cmd}" {compiler.ar.flags} "{build.path}/{archive_file}" "{object_file}"
+
+## Combine gc-sections, archives, and objects
+recipe.c.combine.pattern="{compiler.path}{compiler.c.elf.cmd}" {compiler.c.elf.flags} "-Wl,-Map,{build.path}/{build.project_name}.map" -o "{build.path}/{build.project_name}.elf" "-L{build.path}" -lm -Wl,--warn-common -Wl,--warn-section-align -Wl,--whole-archive {object_files} "{build.path}/{archive_file}" -Wl,--no-whole-archive
+
+## Create eeprom
+recipe.objcopy.eep.pattern=
+
+## Create hex
+recipe.objcopy.hex.pattern="{compiler.path}{compiler.elf2hex.cmd}" {compiler.elf2hex.flags} "{build.path}/{build.project_name}.elf" "{build.path}/{build.project_name}.bin"
+
+## Compute size
+recipe.size.pattern="{compiler.path}{compiler.size.cmd}" "{build.path}/{build.project_name}.elf"
+recipe.size.regex=([0-9]+)\s+([0-9]+)\s+([0-9]+).*
+
+## Generate smallfs
+recipe.smallfs.pattern="{compiler.path}{compiler.smallfs.cmd}" "{build.path}/smallfs.dat" "{sketch.path}/smallfs"
+
+# ZPU Uploader tools
+# -------------------
+
+tools.zpuinoprogrammer.cmd=zpuinoprogrammer
+tools.zpuinoprogrammer.cmd.windows=zpuinoprogrammer.exe
+tools.zpuinoprogrammer.path={runtime.ide.path}/hardware/tools/zpu/bin
+
+tools.zpuinoprogrammer.upload.params.verbose=-v -v
+tools.zpuinoprogrammer.upload.params.quiet=
+tools.zpuinoprogrammer.upload.params.memory="-U"
+tools.zpuinoprogrammer.upload.pattern="{path}/{cmd}" -R {upload.verbose} {upload.memory} -d {serial.port} -b "{build.path}/{build.project_name}.bin" {upload.smallfs}
+
+# ZPU smallfs 
+# ------------------
+tools.zpuinoprogrammer.upload.params.smallfs=-e "{build.path}/smallfs.dat"

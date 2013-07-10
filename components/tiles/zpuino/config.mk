@@ -15,7 +15,7 @@ ISHW_CROSS_TOOLCHAIN_PREFIX:=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR)/zpu-elf-
 ISHW_CROSS_BUILD_DIR:=$(ISHW_BUILD_BASE_DIR)/components/tiles/zpuino
 
 ISHW_CROSS_INCLUDES+=-I$(_TILES_ZPUINO.DIR)/core/zpu20/cores/zpuino
-ISHW_CROSS_CFLAGS:=-DZPU -DZPUINO_ACCEL -Wall -O2 -fno-reorder-blocks -fno-reorder-blocks-and-partition -fno-prefetch-loop-arrays -fno-gcse -ffunction-sections -fdata-sections -nostartfiles -mmult -mdiv -mno-callpcrel -mno-pushspadd -mno-poppcrel -DARDUINO=152 -D__ZPUINO_PAPILIO_PRO__ -DBOARD_ID=0xA5041700 -DBOARD_MEMORYSIZE=0x800000 -nostartfiles
+ISHW_CROSS_CFLAGS:=-DZPU -DZPUINO_ACCEL -Wall -O2 -fno-reorder-blocks -fno-reorder-blocks-and-partition -fno-prefetch-loop-arrays -fno-gcse -ffunction-sections -fdata-sections -mmult -mdiv -mno-callpcrel -mno-pushspadd -mno-poppcrel -DARDUINO=152 -D__ZPUINO_PAPILIO_PRO__ -DBOARD_ID=0xA5041700 -DBOARD_MEMORYSIZE=0x800000 -nostartfiles
 ISHW_CROSS_CPPFLAGS:=-fno-exceptions -fno-rtti $(ISHW_CROSS_CFLAGS)
 ISHW_CROSS_ASMFLAGS+= -DASSEMBLY $(ISHW_CROSS_CFLAGS)
 ISHW_CROSS_ARFLAGS+=crs
@@ -55,6 +55,18 @@ ISHW_TARGETS_HELP+="make zpu-core-library\n\tbuild libzpucore.a, containing low-
 # below 'components' (e.g., _tiles_zpuino_foo, _TILES_ZPUINO_BAR)
 
 _TILES_ZPUINO.BOARD_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl/zpuino/boards/papilio-pro/S6LX9
+_TILES_ZPUINO.BOARD_NAME:=papilio_pro
+
+_TILES_ZPUINO.PROGRAMMER_SRC_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl/zpuino/programmer
+
+_TILES_ZPUINO.PROGRAMMER_BUILD_DIR:=$(ISHW_BUILD_BASE_DIR)/programmer
+_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR:=$(ISHW_BUILD_BASE_DIR)/bin
+
+_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR:=$(_TILES_ZPUINO.DIR)/synth/Papilio-Loader
+_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/papilio-prog
+_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/Java-GUI/programmer/bscan_spi_xc6slx9.bit
+
+_TILES_ZPUINO.SYNTH_BITFILE_PATH:=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/$(_TILES_ZPUINO.BOARD_NAME)_routed.bit
 
 ## ADDITIONAL TOOL WE NEED AND ASSOCIATED TARGETS
 ISHW_CHECK_TARGETS+=check-synth-path
@@ -94,29 +106,40 @@ copy-files:	generate-bootloader
 	@cp $(_TILES_ZPUINO.BOARD_DIR)/../../../bootloader/bootloader-sim.vhd $(_TILES_ZPUINO.BOARD_DIR)
 	@cp $(_TILES_ZPUINO.BOARD_DIR)/../../../bootloader/sdram.srec $(_TILES_ZPUINO.BOARD_DIR)
 
-synth:	report-synth-path
+synth:	report-synth-path $(_TILES_ZPUINO.SYNTH_BITFILE_PATH)
+
+$(_TILES_ZPUINO.SYNTH_BITFILE_PATH):
 	@echo --- Starting synthesis at `date`
-	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
 	start=$$(date +"%s")                                                           ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	. "$(ZPUINO_SYNTH_PATH)/ISE/.settings64.sh" "$(ZPUINO_SYNTH_PATH)/ISE"         ;\
 	make -f Makefile > synthesis.log 2>&1                                          ;\
+	cp $(_TILES_ZPUINO.BOARD_NAME)_routed.bit $(_TILES_ZPUINO.BOARD_NAME)_routed.bin $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR) ;\
 	stop=$$(date +"%s")                                                            ;\
 	diff=$$(($$stop-$$start))                                                      ;\
 	echo "  Wrote" `wc -c <synthesis.log` bytes to synthesis.log                   ;\
 	echo -e --- Synthesis took `date -u -d @"$$diff" +'%-Mm %-Ss'` "\n"
 
+download-synth-file:	$(_TILES_ZPUINO.SYNTH_BITFILE_PATH) $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE)
+	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog -f $(_TILES_ZPUINO.SYNTH_BITFILE_PATH) -sa -r -b $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE)
+
 rebuild-test-bench:	copy-files
 	@echo --- Rebuilding testbench
-	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
 	export XILINX=$(ZPUINO_SYNTH_PATH)/ISE                                         ;\
 	make -f Makefile.sim > rebuild-test-bench.log 2>&1                             ;\
 	echo "  Wrote" `wc -c <rebuild-test-bench.log` bytes to rebuild-test-bench.log
 
 run-fpga-sim:	rebuild-test-bench
 	@echo --- Running testbench
-	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
+	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
 	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=500us
+
+download-bin-file:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer
+	@echo --- Downloading $(BIN_FILE_NAME)
+	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer -v -R -s 1000000 -d $(ZPUINO_DOWNLOAD_DEVICE) -b $(BIN_FILE_NAME)
+
 
 sim-clean:	FORCE
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
@@ -129,3 +152,28 @@ synth-clean:	FORCE
 synth-realclean:	synth-clean
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	make -C ../../../bootloader/ clean
+
+
+build-zpuinoprogrammer:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer
+
+$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/Makefile
+	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);make;make install
+
+$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/Makefile:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/configure
+	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);./configure --bindir=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)
+
+$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/configure:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/configure.ac $(ISHW_ALL_DEP)
+	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);autoreconf;automake --add-missing
+
+
+build-papilio-prog:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog
+
+$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog:	$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/Makefile
+	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);make;make install
+
+$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/Makefile:	$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/configure
+	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);./configure --bindir=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)
+
+$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/configure:	$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/configure.ac $(ISHW_ALL_DEP)
+	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);sh ./autogen.sh
+

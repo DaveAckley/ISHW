@@ -1,0 +1,15 @@
+##############################################################
+zpuino15_papilio_one500.name=ZPUino 1.5 on Papilio One (500) board
+zpuino15_papilio_one500.upload.protocol=zpuino-serial
+zpuino15_papilio_one500.upload.maximum_size=27648
+zpuino15_papilio_one500.upload.size_sections=all
+zpuino15_papilio_one500.upload.speed=1000000
+zpuino15_papilio_one500.upload.tool=zpuinoprogrammer
+zpuino15_papilio_one500.build.f_cpu=96000000L
+zpuino15_papilio_one500.build.core=zpuino
+zpuino15_papilio_one500.build.mcu=zpu
+zpuino15_papilio_one500.build.ldscript=zpuelf.lds
+zpuino15_papilio_one500.build.pins=standard
+zpuino15_papilio_one500.build.toolchain=zpu
+zpuino15_papilio_one500.build.extra_flags=-D__ZPUINO_PAPILIO_ONE__ -DZPU15 -DBOARD_ID=0xA5010F00 -DBOARD_MEMORYSIZE=0x8000 -D__S3E_500__ -nostartfiles
+zpuino15_papilio_one500.build.extraSflags=-DBOARD_ID=0xA5010F00 -DZPU15

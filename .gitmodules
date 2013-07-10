@@ -1,3 +1,6 @@
 [submodule "components/tiles/zpuino/board"]
 	path = components/tiles/zpuino/board
 	url = https://github.com/DaveAckley/ZPUino-HDL.git
+[submodule "components/tiles/zpuino/synth/Papilio-Loader"]
+	path = components/tiles/zpuino/synth/Papilio-Loader
+	url = https://github.com/DaveAckley/Papilio-Loader.git
