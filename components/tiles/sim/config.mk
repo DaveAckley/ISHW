@@ -1,7 +1,11 @@
 ###
-# This file MUST set up ISHW_CROSS_TOOLCHAIN_PREFIX to point to the
-# cross compilation toolchain appropriate to this type of tile.  The
-# standard cross tools (c++, ld, ar, ...) must exist as
+# First, capture this directory path
+_TILES_SIM_DIR:=$(ISHW_THIS_DIR)
+
+###
+# Every tiles/*/config.mk file MUST set up ISHW_CROSS_TOOLCHAIN_PREFIX
+# to point to the cross compilation toolchain appropriate to this type
+# of tile.  The standard cross tools (c++, ld, ar, ...) must exist as
 # $(ISHW_CROSS_TOOLCHAIN_PREFIX)c++ etc (note lack of '/' before c++:
 # The prefix must include that if needed).
 

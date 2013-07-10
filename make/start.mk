@@ -9,6 +9,12 @@ SHELL:=/bin/bash
 ## value is forced at clearly understood times.
 ISHW_THIS_DIR=$(realpath $(dir $(lastword $(MAKEFILE_LIST))))
 
+## Capture our own directory path
+_MAKE_DIR:=$(ISHW_THIS_DIR)
+
+## Initialize global variables
+include $(_MAKE_DIR)/Makeglobals.mk
+
 ## Find our face
 ISHW_MAKE_DIR:=$(ISHW_THIS_DIR)
 ISHW_BASE_DIR:=$(realpath $(ISHW_MAKE_DIR)/..)
