@@ -35,20 +35,6 @@ ISHW_CROSS_CPP_OBJS:=$(patsubst $(_TILES_ZPUINO.DIR)/%.cpp,$(ISHW_CROSS_BUILD_DI
 ISHW_CROSS_OBJS:=$(ISHW_CROSS_CPP_OBJS) $(ISHW_CROSS_C_OBJS) $(ISHW_CROSS_ASM_OBJS)
 
 ###
-# Every config.mk file SHOULD add some text to ISHW_TARGETS_HELP
-# suggesting make targets are available and what they might do
-
-ISHW_TARGETS_HELP+="make build-fpga-sim\n\tbuild the testbench for an fpga-level simulation. 'BIN_FILE_NAME=/path/to/bin; make build-fpga-sim'\n"
-ISHW_TARGETS_HELP+="make run-fpga-sim\n\trun an fpga-level simulation. 'BIN_FILE_NAME=/path/to/bin; make run-fpga-sim'\n"
-# ISHW_TARGETS_HELP+="make synth-download\n\tdownload BIT_FILE_NAME=$(BIT_FILE_NAME) to SYNTH_DOWNLOADER_DEVICE=$(SYNTH_DOWNLOADER_DEVICE)\n"
-ISHW_TARGETS_HELP+="make sim-clean\n\tclean simulation-related material\n"
-ISHW_TARGETS_HELP+="make synth\n\trun the synthesis\n"
-ISHW_TARGETS_HELP+="make synth-clean\n\tclean up the synth work directory\n"
-ISHW_TARGETS_HELP+="make synth-realclean\n\tdo synth-clean and also nuke bootloader for '$(BIT_FILE_NAME)'\n"
-ISHW_TARGETS_HELP+="make generate-bootloader\n\trebuild the bootloader for 'BIN_FILE_NAME=/path/to/bin; make generate-bootloader'\n"
-ISHW_TARGETS_HELP+="make zpu-core-library\n\tbuild libzpucore.a, containing low-level zpuino routines\n"
-
-###
 # This file MAY set up any other variables and targets that are useful
 # for internal operations within this subtree.  Any such internal
 # variables and targets MUST use a prefix formed by '_' plus the path
@@ -67,6 +53,22 @@ _TILES_ZPUINO.PAPILIO_PROG_SRC_DIR:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/papil
 _TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/Java-GUI/programmer/bscan_spi_xc6slx9.bit
 
 _TILES_ZPUINO.SYNTH_BITFILE_PATH:=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/$(_TILES_ZPUINO.BOARD_NAME)_routed.bit
+
+
+###
+# Every config.mk file SHOULD add some text to ISHW_TARGETS_HELP
+# suggesting make targets are available and what they might do
+
+ISHW_TARGETS_HELP+="make build-fpga-sim\n\tbuild the testbench for an fpga-level simulation. 'BIN_FILE_NAME=/path/to/bin; make build-fpga-sim'\n"
+ISHW_TARGETS_HELP+="make run-fpga-sim\n\trun an fpga-level simulation. 'BIN_FILE_NAME=/path/to/bin; make run-fpga-sim'\n"
+# ISHW_TARGETS_HELP+="make synth-download\n\tdownload BIT_FILE_NAME=$(BIT_FILE_NAME) to SYNTH_DOWNLOADER_DEVICE=$(SYNTH_DOWNLOADER_DEVICE)\n"
+ISHW_TARGETS_HELP+="make sim-clean\n\tclean simulation-related material\n"
+ISHW_TARGETS_HELP+="make download-synth-file\n\tdownload $(_TILES_ZPUINO.SYNTH_BITFILE_PATH) to ZPUINO_DOWNLOAD_DEVICE ($(ZPUINO_DOWNLOAD_DEVICE))\n"
+ISHW_TARGETS_HELP+="make synth\n\trun the synthesis\n"
+ISHW_TARGETS_HELP+="make synth-clean\n\tclean up the synth work directory\n"
+ISHW_TARGETS_HELP+="make synth-realclean\n\tdo synth-clean and also nuke bootloader for '$(BIT_FILE_NAME)'\n"
+ISHW_TARGETS_HELP+="make generate-bootloader\n\trebuild the bootloader for 'BIN_FILE_NAME=/path/to/bin; make generate-bootloader'\n"
+ISHW_TARGETS_HELP+="make zpu-core-library\n\tbuild libzpucore.a, containing low-level zpuino routines\n"
 
 ## ADDITIONAL TOOL WE NEED AND ASSOCIATED TARGETS
 ISHW_CHECK_TARGETS+=check-synth-path
@@ -98,7 +100,7 @@ generate-bootloader:	FORCE
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	make -C ../../../bootloader/ -f Makefile.sim clean  > bootloader-generation.log 2>&1 ;\
-	make -C ../../../bootloader/ -f Makefile.sim SKETCHBIN=$(BIN_FILE_NAME)  >> bootloader-generation.log 2>&1;\
+	make -C ../../../bootloader/ -f Makefile.sim SKETCHBIN=$(BIN_FILE_NAME)  >> bootloader-generation.log 2>&1 || exit 11;\
 	echo "  Wrote" `wc -c <bootloader-generation.log` bytes to bootloader-generation.log
 
 copy-files:	generate-bootloader
@@ -114,21 +116,28 @@ $(_TILES_ZPUINO.SYNTH_BITFILE_PATH):
 	start=$$(date +"%s")                                                           ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	. "$(ZPUINO_SYNTH_PATH)/ISE/.settings64.sh" "$(ZPUINO_SYNTH_PATH)/ISE"         ;\
-	make -f Makefile > synthesis.log 2>&1                                          ;\
+	make -f Makefile > synthesis.log 2>&1 || exit 11                               ;\
 	cp $(_TILES_ZPUINO.BOARD_NAME)_routed.bit $(_TILES_ZPUINO.BOARD_NAME)_routed.bin $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR) ;\
 	stop=$$(date +"%s")                                                            ;\
 	diff=$$(($$stop-$$start))                                                      ;\
 	echo "  Wrote" `wc -c <synthesis.log` bytes to synthesis.log                   ;\
 	echo -e --- Synthesis took `date -u -d @"$$diff" +'%-Mm %-Ss'` "\n"
 
-download-synth-file:	$(_TILES_ZPUINO.SYNTH_BITFILE_PATH) $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE)
+download-synth-file:	$(_TILES_ZPUINO.SYNTH_BITFILE_PATH) $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE) kill-minicom
 	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog -f $(_TILES_ZPUINO.SYNTH_BITFILE_PATH) -sa -r -b $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE)
+
+kill-minicom:	FORCE
+	@ps cax | grep minicom &&\
+	echo -n "[Shooting minicom and waiting for it to die.." &&\
+	killall -w -15 minicom &&\
+	echo " Done]" ; true
 
 rebuild-test-bench:	copy-files
 	@echo --- Rebuilding testbench
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
+	make -f Makefile.sim clean > rebuild-test-bench.log 2>&1 || exit 11            ;\
 	export XILINX=$(ZPUINO_SYNTH_PATH)/ISE                                         ;\
-	make -f Makefile.sim > rebuild-test-bench.log 2>&1                             ;\
+	make -f Makefile.sim >> rebuild-test-bench.log 2>&1 || exit 11                 ;\
 	echo "  Wrote" `wc -c <rebuild-test-bench.log` bytes to rebuild-test-bench.log
 
 run-fpga-sim:	rebuild-test-bench
@@ -136,7 +145,7 @@ run-fpga-sim:	rebuild-test-bench
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
 	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=500us
 
-download-bin-file:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer
+download-bin-file:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer kill-minicom
 	@echo --- Downloading $(BIN_FILE_NAME)
 	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer -v -R -s 1000000 -d $(ZPUINO_DOWNLOAD_DEVICE) -b $(BIN_FILE_NAME)
 
@@ -146,6 +155,7 @@ sim-clean:	FORCE
 	make -f Makefile.sim clean
 
 synth-clean:	FORCE
+	@rm -f $(_TILES_ZPUINO.SYNTH_BITFILE_PATH)
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
 	make clean
 
@@ -157,7 +167,7 @@ synth-realclean:	synth-clean
 build-zpuinoprogrammer:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer
 
 $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/Makefile
-	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);make;make install
+	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);make || exit 11 ;make install || exit 11
 
 $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/Makefile:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/configure
 	cd $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR);./configure --bindir=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)
@@ -169,7 +179,7 @@ $(_TILES_ZPUINO.PROGRAMMER_SRC_DIR)/configure:	$(_TILES_ZPUINO.PROGRAMMER_SRC_DI
 build-papilio-prog:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog
 
 $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog:	$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/Makefile
-	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);make;make install
+	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);make || exit 11;make install || exit 11
 
 $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/Makefile:	$(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR)/configure
 	cd $(_TILES_ZPUINO.PAPILIO_PROG_SRC_DIR);./configure --bindir=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)
