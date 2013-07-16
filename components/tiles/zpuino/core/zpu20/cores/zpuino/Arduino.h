@@ -6,6 +6,8 @@
 #include <HardwareSerial.h>
 #include <binary.h>
 
+#include <Random.h>
+
 #ifndef  boolean
 #define boolean bool
 #endif
