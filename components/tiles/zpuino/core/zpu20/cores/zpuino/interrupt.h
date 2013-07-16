@@ -17,5 +17,16 @@ extern void attachInterrupt(unsigned int, void (*)(void), int mode=0);
 extern void detachInterrupt(unsigned int);
 extern int attachInterrupt(unsigned int line, void (*function)(void*), void *arg);
 
+/* Arduino API */
+static __attribute__((always_inline)) inline void noInterrupts()
+{
+  cli();
+}
+
+static __attribute__((always_inline)) inline void interrupts()
+{
+  sei();
+}
+
 
 #endif
