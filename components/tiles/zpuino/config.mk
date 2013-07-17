@@ -143,7 +143,7 @@ rebuild-test-bench:	copy-files
 run-fpga-sim:	rebuild-test-bench
 	@echo --- Running testbench
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
-	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=500us
+	./tb --ieee-asserts=disable --wave=out.ghw --stop-time=1000us
 
 download-bin-file:	$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/zpuinoprogrammer kill-minicom
 	@echo --- Downloading $(BIN_FILE_NAME)
