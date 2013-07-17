@@ -1,10 +1,20 @@
 
+extern unsigned int __bss_start__,__bss_end__;
 extern unsigned int ___ctors, ___ctors_end;
 extern char __end__;
 static char *start_brk = &__end__;
 
 extern void _Z4loopv();
 extern void _Z5setupv();
+
+void ___clear_bss()
+{
+	unsigned int *ptr =  &__bss_start__;
+	while (ptr!=&__bss_end__) {
+		*ptr = 0;
+		ptr++;
+	}
+}
 
 void ___do_global_ctors()
 {
@@ -35,6 +45,7 @@ int main(int argc, char **argv)
 
 void __attribute__((noreturn)) _premain(void)
 {
+	___clear_bss();
 	___do_global_ctors();
 	main(0,0);
 	while(1);
