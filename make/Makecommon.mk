@@ -1,9 +1,13 @@
+# Export everything to everybody.  We just can't shut up.
+export
+
 ISHW_CONFIG_DIR:=$(ISHW_BASE_DIR)/config
 
 ISHW_COMPONENT_DIR:=$(ISHW_BASE_DIR)/components
 
 ## Find the key pieces of the build system
-ISHW_ALL_DEP:=$(wildcard $(ISHW_MAKE_DIR)/*.mk) $(wildcard $(ISHW_COMPONENT_DIR)/*/config.mk)
+ISHW_ALL_DEP:=$(realpath $(shell find .. -type f -name 'config.mk' -o -name 'Makefile*'))
+#ISHW_ALL_DEP:=$(wildcard $(ISHW_MAKE_DIR)/*.mk) $(wildcard $(ISHW_COMPONENT_DIR)/*/config.mk)
 
 ISHW_COMPONENTS:=$(notdir $(wildcard $(ISHW_COMPONENT_DIR)/*))
 ISHW_CHECK_TARGETS:=$(patsubst %,check-%-path,$(ISHW_COMPONENTS))
