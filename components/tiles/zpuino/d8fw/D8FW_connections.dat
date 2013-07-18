@@ -1,0 +1,167 @@
+##
+# Section 2: D8FW connections
+#
+# Section 2.1 Matching face pins to wing pins
+#
+# Now we match up each face pin to its corresponding wing pin, in the
+# abstract, without being concerned with any specific tile.  This
+# section contains a lot of handwork representing various design
+# decisions about tile layout on the PPros, involving FPGA properties
+# as well D8FW layout.  The inconsistencies about where _CKIS (and
+# thus _CKOM) appear in the pin ordering, in particular, is driven by
+# wanting to have all _CKIS pins on GCLK-able pins as per Section
+# 1.4.1.
+
+alias(WING_B00,NT_FACE_CKOM);
+alias(WING_B01,NT_FACE_LCKI);
+alias(WING_B02,NT_FACE_LCKO);
+alias(WING_B03,NT_FACE_DATI);
+alias(WING_B04,NT_FACE_DATO);
+
+alias(WING_B10,ST_FACE_DATI);
+alias(WING_B11,ST_FACE_DATO);
+alias(WING_B12,ST_FACE_LCKI);
+alias(WING_B13,ST_FACE_LCKO);
+alias(WING_B14,ST_FACE_CKIS); 
+
+alias(WING_A05,ET_FACE_CKOM);
+alias(WING_A06,ET_FACE_LCKI);
+alias(WING_A07,ET_FACE_LCKO);
+alias(WING_A08,ET_FACE_DATI);
+alias(WING_A09,ET_FACE_DATO);
+
+alias(WING_C06,WT_FACE_DATI);
+alias(WING_C07,WT_FACE_DATO);
+alias(WING_C08,WT_FACE_LCKI);
+alias(WING_C09,WT_FACE_LCKO);
+alias(WING_C10,WT_FACE_CKIS);
+
+alias(WING_C00,NW_FACE_LCKO);
+alias(WING_C01,NW_FACE_CKOM);
+alias(WING_C02,NW_FACE_LCKI);
+alias(WING_C03,NW_FACE_DATO);
+alias(WING_C04,NW_FACE_DATI);
+
+alias(WING_A00,SE_FACE_LCKI);
+alias(WING_A01,SE_FACE_CKIS);
+alias(WING_A02,SE_FACE_LCKO);
+alias(WING_A03,SE_FACE_DATI);
+alias(WING_A04,SE_FACE_DATO);
+
+alias(WING_A11,NE_FACE_LCKO);
+alias(WING_A12,NE_FACE_CKIS);
+alias(WING_A13,NE_FACE_LCKI);
+alias(WING_A14,NE_FACE_DATO);
+alias(WING_A15,NE_FACE_DATI);
+
+alias(WING_C11,SW_FACE_LCKI);
+alias(WING_C12,SW_FACE_CKOM);
+alias(WING_C13,SW_FACE_LCKO);
+alias(WING_C14,SW_FACE_DATI);
+alias(WING_C15,SW_FACE_DATO);
+
+assertProp(ST_FACE_CKIS,GCLK);
+assertProp(WT_FACE_CKIS,GCLK);
+assertProp(NE_FACE_CKIS,GCLK);
+assertProp(SE_FACE_CKIS,GCLK);
+
+#
+# Section 2.2 Instantiating the face pins on the D8FW
+#
+# Now we create names for each of the data pins on the D8FW in terms
+# of the face pin definitions of the underlying tiles, of the form
+# PP11_NW_FACE_LCKO.  We iterate over all the D8FW pins and check if
+# each has an alias showing it's used as a wing pin used in a face
+
+for my $ipin (getList('_IPINS')) {
+    my $ppwid = getAliasMatching($ipin,'PP.._WING_...');
+#    print "CHECK($ipin)->$ppwid ";
+    next unless defined($ppwid);
+
+    my $ppid = getProp($ppwid,'PPRO');
+    my $wingid = getProp($ppwid,'WINGPIN');
+    croak unless defined($ppid) && defined($wingid);
+
+    my $facepinid = getAliasMatching($wingid,'.._FACE_....');
+    next unless defined($facepinid);
+
+    my $name = $ppid."_".$facepinid;
+#    print "DEF($name)\n";
+    name($name);
+    props($name,'PPRO',$ppid,'WINGPIN',$wingid);
+    alias($ipin,$name);
+}
+
+
+##
+# Section 2.3 D8FW internal pin connections
+#
+# This defines the connections made by a single D8FW -- excluding the
+# LEDs -- expressed as netlists.
+
+sub connectMasterSlave {
+    my ($masterPrefix,$slavePrefix,$altMasterPrefix,$altSlavePrefix) = @_;
+    my %mpairs = (
+        'CKOM'=>'CKIS', 
+        'LCKO'=>'LCKI', 'LCKI'=>'LCKO',
+        'DATI'=>'DATO', 'DATO'=>'DATI'
+        );
+    for my $msym (keys %mpairs) {
+        my $ssym = $mpairs{$msym};
+
+        my $mid = "${masterPrefix}_FACE_${msym}";
+        my $sid = "${slavePrefix}_FACE_${ssym}";
+        if (isDefined($mid) && isDefined($sid)) {
+            net($mid,$sid);
+        } else {
+            croak if isDefined($mid) || isDefined($sid);
+            croak "connectMasterSlave($masterPrefix,$slavePrefix,?,?) $msym/$ssym" unless 
+                (defined $altMasterPrefix && 
+                 defined $altSlavePrefix);
+            my $amid = "${altMasterPrefix}_FACE_${msym}";
+            my $asid = "${altSlavePrefix}_FACE_${ssym}";
+            croak unless isDefined($amid) && isDefined($asid);
+            net($amid,$asid);
+        }
+    }
+}
+
+connectMasterSlave("PP00_ET","PP10_WT","PP01_ET","PP11_WT");
+connectMasterSlave("PP11_NW","PP00_SE");
+connectMasterSlave("PP10_SW","PP01_NE");
+connectMasterSlave("PP11_NT","PP10_ST");
+
+connectMasterSlave("PP10_ET","PP20_WT","PP11_ET","PP21_WT");
+connectMasterSlave("PP21_NW","PP10_SE");
+connectMasterSlave("PP20_SW","PP11_NE");
+connectMasterSlave("PP21_NT","PP20_ST");
+
+##
+# Section 2.4 D8FW LED pin connections
+
+net("PP00_ET_FACE_LCKO","LED1");
+net("PP10_WT_FACE_LCKO","LED2");
+
+net("PP10_ET_FACE_LCKO","LED3");
+net("PP20_WT_FACE_LCKO","LED4");
+
+net("PP00_SE_FACE_LCKO","LED5");
+
+net("PP10_SW_FACE_LCKO","LED6");
+net("PP10_ST_FACE_LCKO","LED7");
+net("PP10_SE_FACE_LCKO","LED8");
+
+net("PP20_SW_FACE_LCKO","LED9");
+net("PP20_ST_FACE_LCKO","LED10");
+
+net("PP01_NE_FACE_LCKO","LED11");
+
+net("PP11_NW_FACE_LCKO","LED12");
+net("PP11_NT_FACE_LCKO","LED13");
+net("PP11_NE_FACE_LCKO","LED14");
+
+net("PP21_NW_FACE_LCKO","LED15");
+net("PP21_NT_FACE_LCKO","LED16");
+
+# END OF FILE MARKER:
+1;

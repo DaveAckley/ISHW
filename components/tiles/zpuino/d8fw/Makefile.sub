@@ -1,0 +1,29 @@
+# This is a submakefile: It doesn't run on its own
+ifeq ($(MAKELEVEL),0)
+$(error This is a submakefile: It doesn't run on its own.)
+endif
+
+###
+# Capture this directory path
+_TILES_ZPUINO_D8FW.DIR:=$(ISHW_THIS_DIR)
+
+_TILES_ZPUINO_D8FW.DOC_DIR:=$(ISHW_BASE_DIR)/doc/tile/zpuino/data
+_TILES_ZPUINO_D8FW.INPUTS:=D8FW_gen.pl D8FW_names.dat D8FW_connections.dat
+
+_TILES_ZPUINO_D8FW.FIRST_OUTPUT:=$(_TILES_ZPUINO_D8FW.DOC_DIR)/d8fw.png
+_TILES_ZPUINO_D8FW.OUTPUTS:=$(_TILES_ZPUINO_D8FW.FIRST_OUTPUT) 
+_TILES_ZPUINO_D8FW.OUTPUTS+=$(_TILES_ZPUINO_D8FW.DOC_DIR)/D8FWPin2Pin.csv
+_TILES_ZPUINO_D8FW.OUTPUTS+=$(_TILES_ZPUINO_D8FW.DOC_DIR)/D8FWByPin.csv
+_TILES_ZPUINO_D8FW.OUTPUTS+=$(_TILES_ZPUINO_D8FW.DOC_DIR)/D8FWByFunc.csv
+
+
+all:	$(_TILES_ZPUINO_D8FW.FIRST_OUTPUT)
+
+
+$(_TILES_ZPUINO_D8FW.FIRST_OUTPUT):	$(_TILES_ZPUINO_D8FW.INPUTS) $(ISHW_ALL_DEP)
+	./D8FW_gen.pl $(_TILES_ZPUINO_D8FW.OUTPUTS)
+
+clean:	
+	rm -f $(_TILES_ZPUINO_D8FW.OUTPUTS)
+
+realclean:	clean

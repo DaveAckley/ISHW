@@ -1,0 +1,315 @@
+##
+# Section 1: D8FW nomenclature
+#
+# Section 1.1 Face codes
+#
+# Each PPro has eight faces to connect to other tiles: four in the
+# orthogonal directions and four on the diagonals.  Here we give names
+# to the faces, according to directions of the compass with north
+# facing up and east facing to the right.  These codes are not meant
+# to stand alone -- they do not have a unique prefix, for example.
+# They are meant to be used as components of larger names and as
+# property values.
+
+name('_DIRS');
+#             0     1     2     3     4     5     6     7
+list('_DIRS','NT', 'NE', 'ET', 'SE', 'ST', 'SW', 'WT', 'NW' );
+
+{
+    my @dirs = getList('_DIRS');
+    for my $dir (@dirs) {
+        name($dir);
+    }
+
+    my $count = scalar(@dirs);
+    for (my $code = 0; $code < $count; ++$code) {
+        props($dirs[$code],'value',$code,'mate',$dirs[($code+$count/2)%$count]);
+    }
+}
+
+# Section 1.2 Pin names
+#
+# The pin connections on the D8FW --- looking only at the
+# data-carrying pins --- can be thought of as a grid of 6 columns by
+# 16 rows.  When the D8FW is held so the USB connector is pointing
+# down and the OSHW license is visible and upright, the D8FW data pin
+# columns are indexed as 0..5 from left to right and 0..F (hex) from
+# top to bottom.  D8FW pin names are three characters, beginning with
+# 'I' for 'Interconnect', followed by the column (X) coordinate and
+# the row (Y) coordinate.  So I00 is the upper left pin on the D8FW,
+# I5F is the lower right pin, and, for example, I18 connects to pin C0
+# on a PPro installed in the center bottom of the D8FW.
+#
+
+my $D8FW_DATA_PIN_COLUMNS = 6;
+my $D8FW_DATA_PIN_ROWS = 16;
+
+for (my $x = 0; $x < $D8FW_DATA_PIN_COLUMNS; ++$x) {
+    for (my $y = 0; $y < $D8FW_DATA_PIN_ROWS; ++$y) {
+        my $id = sprintf("I%X%X",$x,$y);
+        name($id);
+        props($id,"x",$x,"y",$y);
+        pushList('_IPINS',$id);
+    }
+}
+
+# Section 1.3 Interconnected Papilio Pro names 
+#
+# A single D8FW interconnects parts of up to six Papilio Pros, which
+# can be thought of as a grid of 3 columns by 2 rows.  The Papilio
+# Pros are named 'PP' followed by their column (0..2) in that grid,
+# counting from left to right, followed by their row (0..1) in that
+# grid, counting from the top to the bottom.  So PP00 has just its
+# lower right corner connected, and the USB connector is over PP11,
+# and the OSHW logo appears over PP21.
+
+my $D8FW_PPRO_COLUMNS = 3;
+my $D8FW_PPRO_ROWS = 2;
+
+for (my $x = 0; $x < $D8FW_PPRO_COLUMNS; ++$x) {
+    for (my $y = 0; $y <= $D8FW_PPRO_ROWS; ++$y) {
+        my $id = sprintf("PP%X%X",$x,$y); 
+        name($id);
+        props($id,"x",$x,"y",$y);
+        pushList('_PPROS',$id);
+    }
+}
+
+# Section 1.4 Papilio Pro wing pin names and FPGA internal pin names
+#
+# A D8FW maps between wing pins on different PPro boards, so we need
+# to be able to refer to wing pins and map between wing pin names,
+# FPGA internal pin names, and D8FW pin names.  Here we define the
+# internal pin names as P0 etc, and define the wing pins as aliases of
+# them for WING_A00 etc.  These names are for any PPro -- meaning they
+# are not localized to any particular PPro position on a D8FW.
+
+my $PPRO_FPGA_PIN_COUNT = 144;
+for (my $pin = 1; $pin <= $PPRO_FPGA_PIN_COUNT; ++$pin) {
+    my $id = "P$pin";
+    name($id);
+    props($id, "num", $pin);
+}
+
+alias("P48",'WING_A00');
+alias("P51",'WING_A01');
+alias("P56",'WING_A02');
+alias("P58",'WING_A03');
+alias("P61",'WING_A04');
+alias("P66",'WING_A05');
+alias("P67",'WING_A06');
+alias("P75",'WING_A07');
+alias("P79",'WING_A08');
+alias("P81",'WING_A09');
+alias("P83",'WING_A10');
+alias("P85",'WING_A11');
+alias("P88",'WING_A12');
+alias("P93",'WING_A13');
+alias("P98",'WING_A14');
+alias("P100",'WING_A15');
+
+alias("P99",'WING_B00');
+alias("P97",'WING_B01');
+alias("P92",'WING_B02');
+alias("P87",'WING_B03');
+alias("P84",'WING_B04');
+alias("P82",'WING_B05');
+alias("P80",'WING_B06');
+alias("P78",'WING_B07');
+alias("P74",'WING_B08');
+alias("P95",'WING_B09');
+alias("P62",'WING_B10');
+alias("P59",'WING_B11');
+alias("P57",'WING_B12');
+alias("P55",'WING_B13');
+alias("P50",'WING_B14');
+alias("P47",'WING_B15');
+
+alias("P114",'WING_C00');
+alias("P115",'WING_C01');
+alias("P116",'WING_C02');
+alias("P117",'WING_C03');
+alias("P118",'WING_C04');
+alias("P119",'WING_C05');
+alias("P120",'WING_C06');
+alias("P121",'WING_C07');
+alias("P123",'WING_C08');
+alias("P124",'WING_C09');
+alias("P126",'WING_C10');
+alias("P127",'WING_C11');
+alias("P131",'WING_C12');
+alias("P132",'WING_C13');
+alias("P133",'WING_C14');
+alias("P134",'WING_C15');
+
+# Section 1.4.1 Properties of FPGA internal pin names
+#
+# Only some of the FPGA internal pins can be used efficiently as
+# external clock sources.  Here we tag the pins that are with 'GCLK'.
+# We throw in some other properties from Table 2-2 of Xilinx's UG385
+# because it was easy with an Emacs macro, in case they turn out to
+# matter at some point.
+
+props('P14','bank', 3, 'io','L44N', 'GCLK', 20, 'sub', '3','bufio2', 'LT');
+props('P15','bank', 3, 'io','L44P', 'GCLK', 21, 'sub', '3','bufio2', 'LT');
+props('P16','bank', 3, 'io','L43N', 'GCLK', 22, 'sub', 'IRDY2_3','bufio2', 'LT');
+props('P17','bank', 3, 'io','L43P', 'GCLK', 23, 'sub', '3','bufio2', 'LT');
+props('P21','bank', 3, 'io','L42N', 'GCLK', 24, 'sub', '3','bufio2', 'LB');
+props('P22','bank', 3, 'io','L42P', 'GCLK', 25, 'sub', 'TRDY2_3','bufio2', 'LB');
+props('P23','bank', 3, 'io','L41N', 'GCLK', 26, 'sub', '3','bufio2', 'LB');
+props('P24','bank', 3, 'io','L41P', 'GCLK', 27, 'sub', '3','bufio2', 'LB');
+props('P50','bank', 2, 'io','L31N', 'GCLK', 30, 'sub', 'D15_2','bufio2', 'BL');
+props('P51','bank', 2, 'io','L31P', 'GCLK', 31, 'sub', 'D14_2','bufio2', 'BL');
+props('P55','bank', 2, 'io','L30N', 'GCLK', 0,  'sub', 'USERCCLK_2','bufio2', 'BR');
+props('P56','bank', 2, 'io','L30P', 'GCLK', 1,  'sub', 'D13_2','bufio2', 'BR');
+props('P84','bank', 1, 'io','L43N', 'GCLK', 4,  'sub', '1','bufio2', 'RB');
+props('P85','bank', 1, 'io','L43P', 'GCLK', 5,  'sub', '1','bufio2', 'RB');
+props('P87','bank', 1, 'io','L42N', 'GCLK', 6,  'sub', 'TRDY1_1','bufio2', 'RB');
+props('P88','bank', 1, 'io','L42P', 'GCLK', 7,  'sub', '1','bufio2', 'RB');
+props('P92','bank', 1, 'io','L41N', 'GCLK', 8,  'sub', '1','bufio2', 'RT');
+props('P93','bank', 1, 'io','L41P', 'GCLK', 9,  'sub', 'IRDY1_1','bufio2', 'RT');
+props('P94','bank', 1, 'io','L40N', 'GCLK', 10, 'sub', '1', 'bufio2', 'RT');
+props('P95','bank', 1, 'io','L40P', 'GCLK', 11, 'sub', '1', 'bufio2', 'RT');
+props('P123','bank',0, 'io','L37N', 'GCLK', 12, 'sub', '0', 'bufio2', 'TR');
+props('P124','bank',0, 'io','L37P', 'GCLK', 13, 'sub', '0', 'bufio2', 'TR');
+props('P126','bank',0, 'io','L36N', 'GCLK', 14, 'sub', '0', 'bufio2', 'TR');
+props('P127','bank',0, 'io','L36P', 'GCLK', 15, 'sub', '0', 'bufio2', 'TR');
+props('P131','bank',0, 'io','L35N', 'GCLK', 16, 'sub', '0', 'bufio2', 'TL');
+props('P132','bank',0, 'io','L35P', 'GCLK', 17, 'sub', '0', 'bufio2', 'TL');
+props('P133','bank',0, 'io','L34N', 'GCLK', 18, 'sub', '0', 'bufio2', 'TL');
+props('P134','bank',0, 'io','L34P', 'GCLK', 19, 'sub', '0', 'bufio2', 'TL');
+
+
+# Section 1.5 Interconnected Papilio Pro wing pin aliases
+#
+# Here we define aliases for the D8FW 'I' pins in terms of the
+# interconnected PPros 'PP' pins and the individual PPro wing pins
+# 'WING_', of the form PP00_WING_A00.  These definitions are in terms
+# of segments of columns since different pieces of the interconnected
+# PPros are mapped on any given D8FW.  For example, 
+#
+#   mapColumnSegment(0, 0, 8, 'PP00', 'A', 7, -1);
+#
+# means that in column 0, starting at row 0 and running down for 8
+# rows total, PP00's wing A can be found -- starting with pin A07 and
+# incrementing by -1 each row down.  This definitions is equivalent to
+# a set of definitions of the form
+#   alias('I00','PP00_WING_A07'); 
+#   alias('I01','PP00_WING_A06');
+# ..
+#   alias('I07','PP00_WING_A00');
+#
+# plus a set of property definitions of the form
+#   props('PP00_WING_A07','PPRO','PP00','WING','A', 'WINGPIN', 'WING_A07')
+#   props('PP00_WING_A06','PPRO','PP00','WING','A', 'WINGPIN', 'WING_A06')
+# ..   
+#   props('PP00_WING_A00','PPRO','PP00','WING','A', 'WINGPIN', 'WING_A00')
+
+mapColumnSegment(0, 0, 8, 'PP00', 'A', 7, -1);  # PP00_WING_A07..PP00_WING_A00
+mapColumnSegment(1, 0, 8, 'PP10', 'C', 8, +1);  # PP10_WING_C08..PP10_WING_C15
+mapColumnSegment(2, 0, 8, 'PP10', 'B', 8, +1);  # PP10_WING_B08..PP10_WING_B15
+mapColumnSegment(3, 0, 8, 'PP10', 'A', 7, -1);  # PP10_WING_A07..PP10_WING_A00
+mapColumnSegment(4, 0, 8, 'PP20', 'C', 8, +1);  # PP20_WING_C08..PP20_WING_C15
+mapColumnSegment(5, 0, 8, 'PP20', 'B', 8, +1);  # PP20_WING_B08..PP20_WING_B15
+
+mapColumnSegment(0, 8, 8, 'PP01', 'A',15, -1);  # PP01_WING_A15..PP01_WING_A08
+mapColumnSegment(1, 8, 8, 'PP11', 'C', 0, +1);  # PP11_WING_C00..PP11_WING_C07
+mapColumnSegment(2, 8, 8, 'PP11', 'B', 0, +1);  # PP11_WING_B00..PP11_WING_B07
+mapColumnSegment(3, 8, 8, 'PP11', 'A',15, -1);  # PP11_WING_A15..PP11_WING_A08
+mapColumnSegment(4, 8, 8, 'PP21', 'C', 0, +1);  # PP21_WING_C00..PP21_WING_C07
+mapColumnSegment(5, 8, 8, 'PP21', 'B', 0, +1);  # PP21_WING_B00..PP21_WING_B07
+
+# Section 1.6 LED names
+#
+# A single D8FW contains a single power LED and 16 LEDs connected to
+# data pins.  The data pin LEDs are labeled on the D8FW silkscreen as
+# LED1..LED16 starting in the upper left corner and going from left to
+# right and then down.  They also have aliases of the form 'L'
+# followed by the corresponding (two digit) PPro number from section
+# 1.2, followed by the two letter direction code (NT, NE, ET, SE, ST,
+# SW, WT, NW).  So for example the alias for LED1 is L00ET -- the LED
+# on PP00's East side, and the alias for LED12 is L11NW -- the LED on
+# PP11's Northwest side.
+
+my $D8FW_DATA_LEDS = 16;
+for (my $led = 1; $led <= $D8FW_DATA_LEDS; ++$led) {
+    name(sprintf("LED%d",$led));
+}
+name('_LEDS');
+list('_LEDS',prefix('LED'));
+
+alias("LED1","L00ET");
+alias("LED2","L10WT");
+alias("LED3","L10ET");
+alias("LED4","L20WT");
+
+alias("LED5","L00SE");
+alias("LED6","L10SW");
+alias("LED7","L10ST");
+alias("LED8","L10SE");
+alias("LED9","L20SW");
+alias("LED10","L20ST");
+
+alias("LED11","L01NE");
+alias("LED12","L11NW");
+alias("LED13","L11NT");
+alias("LED14","L11NE");
+alias("LED15","L21NW");
+alias("LED16","L21NT");
+
+# Section 1.7 Face group names
+#
+# Each PPro communicates with eight others via the D8FW interconnect.
+# An intertile connection involves five lines: Two for locking and
+# three for communication.  These lines run between two asymmetric
+# components: A master and a slave, which differ externally only in
+# that the shared clock line is an output from the master and an input
+# to the slave.  Here we give names to the lines, and properties
+# specifying which direction they go relative to the PPro they are on,
+# and the name of the pin they must connect to.
+
+name('FACE_LCKI');   # LoCK Input  (on all faces, input)
+name('FACE_LCKO');   # LoCK Output (on all faces, output)
+name('FACE_DATI');   # Data Input (on all faces, input)
+name('FACE_DATO');   # Data Out (on all faces, output)
+
+name('_FACE_Common');
+list('_FACE_Common',prefix('FACE_'));
+
+name('FACE_CKIS');   # ClocK Input (on Slave, input)
+name('FACE_CKOM');   # ClocK Output (on Master, output)
+
+props('FACE_CKIS','dir','input','mate','FACE_CKOM');
+props('FACE_CKOM','dir','output','mate','FACE_CKIS');
+
+props('FACE_LCKI','dir','input','mate','FACE_LCKO');
+props('FACE_LCKO','dir','output','mate','FACE_LCKI');
+
+props('FACE_DATI','dir','input','mate','FACE_DATO');
+props('FACE_DATO','dir','output','mate','FACE_DATI');
+
+# Section 1.8 Face pins to wing pins
+#
+# Section 1.8.1 Names of face pins
+#
+# First we generate the names of all the face pins, of the form
+# NT_FACE_DATO and so forth, distinguishing masters and slaves
+
+my @masters = ('NT', 'ET', 'NW', 'SW');
+my @slaves =  ('ST', 'WT', 'SE', 'NE');
+
+for my $m (@masters) {
+    name($m."_FACE_CKOM");
+    for my $common (getList('_FACE_Common')) {
+         name($m."_$common");
+    }
+}
+for my $s (@slaves) {
+    name($s."_FACE_CKIS");
+    for my $common (getList('_FACE_Common')) {
+        name($s."_$common");
+    }
+}
+
+# END OF FILE MARKER:
+1;
