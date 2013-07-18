@@ -482,6 +482,28 @@ sub makeBoardImage {
             or croak "$@";
     }
 
+    # Draw power/ground blocks for reference
+    my @pgCol = ( 0, 1, 2, 3, 4, 5, 0, 1, 2, 3, 4, 5);
+    my @pgRow = ( 0, 0, 0, 0, 0, 0, 8, 8, 8, 8, 8, 8);
+    my @pgYOf = ( 1,-1,-1, 1,-1,-1, 1,-1,-1, 1,-1,-1);
+    my @pgXOf = ( 4, 0, 0, 4, 0, 0, 4, 0, 0, 4, 0, 0);
+
+    for (my $i = 0; $i < scalar(@pgCol); ++$i) {
+        for (my $box = 0; $box < 4; ++$box) {
+            my $col = $pgCol[$i];
+            my $row = $pgRow[$i]+$box;
+
+            my $colMM = $columnToMM{$col}+$pgYOf[$i]*$pinSpacingMM;
+            my $rowMM = $rowBlockToMM{int($row/8)}+($row%8+$pgXOf[$i])*$pinSpacingMM;
+
+            $im->rectangle($bx+$colMM*$pixPerMM,
+                           $by+$rowMM*$pixPerMM,
+                           $bx+($colMM+$pinSpacingMM)*$pixPerMM,
+                           $by+($rowMM+$pinSpacingMM)*$pixPerMM,
+                           $dkgrey);
+        }
+    }
+
     # Draw title and timestamp
     $im->stringFT($black,$titleFont,50,0,10,60,"D8FW I pin positions")
         or croak "$@";
