@@ -1,19 +1,27 @@
 #!/usr/bin/perl -Tw
 
+use Carp;
+
 my %knownFiles = (
     'debug.log' => \&dumpAll,
     'd8fw.png' => \&makeBoardImage,
     'D8FWPin2Pin.csv' => \&printP2PCSV,
     'D8FWByPin.csv' => \&printNetsByPin,
     'D8FWByFunc.csv' => \&printNetsByFunc,
+    'ishw_papilio_pro_top.vhd' => \&generateTopVHD,
     );
 
-use Carp;
+use Cwd "abs_path";  # for abs_path
+use File::Basename;  # for dirname
+my $scriptpath = abs_path($0);
+my $scriptdir = dirname($scriptpath);
+my $timestamp = scalar(localtime());
+my $whoami = getlogin || getpwuid($<) || "unknown";
 
 my %allNames;
 sub name {
     my $newName = shift;
-    croak if isDefined($newName);
+    croak "name '$newName' already defined" if isDefined($newName);
     defineName($newName);
 }
 
@@ -351,24 +359,6 @@ sub toCSV {
     return '"'.join('","',@_).'"'."\n";
 }
 
-sub doMe {
-    my $file = shift;
-    unless (my $return = do $file) {
-        croak "couldn't parse $file: $@" if $@;
-        croak "couldn't do $file: $!"    unless defined $return;
-        croak "couldn't run $file"       unless $return;
-    }
-    print STDERR "[Loaded $file]\n";
-}
-
-# Begin block to load names and aliases early, so we can later parse
-# them without quotes.
-
-BEGIN {
-    my $file = "./D8FW_names.dat";
-    doMe($file);
-}
-
 sub loadConnections {
     doMe("./D8FW_connections.dat");
     removeUnusedNets();
@@ -507,7 +497,7 @@ sub makeBoardImage {
     # Draw title and timestamp
     $im->stringFT($black,$titleFont,50,0,10,60,"D8FW I pin positions")
         or croak "$@";
-    $im->stringFT($black,$bodyFont,12,PI/2,$width-4,$height-4,"Generated ".scalar(localtime())." by ".(getlogin||getpwuid($<)||"unknown"))
+    $im->stringFT($black,$bodyFont,12,PI/2,$width-4,$height-4,"Generated $timestamp by $whoami")
         or croak "$@";
 
 
@@ -564,42 +554,240 @@ sub main {
     help() unless $havecon;
 }
 
+##################
+##  Generating top
+
+my $topTemplate = "ishw_papilio_pro_top.vhd.dat";
+my $loadedTopTemplate = 0;
+my @topVHDPieces;
+#my @ishwSlaveSlots = ('over');
+#my @ishwMasterSlots = ('ride', 'me');
+#my @ishwAllSlots;
+
+sub addPiece {
+    push @topVHDPieces, @_;
+}
+
+sub generateTopVHD {
+    my ($handle) = @_;
+    if (!$loadedTopTemplate) {
+        doMe("./$topTemplate");
+#        @ishwAllSlots = (@ishwSlaveSlots,@ishwMasterSlots);
+#        croak "Bad slots: '".join(",",@ishwAllSlots)."'" unless scalar @ishwAllSlots == 8;
+        $loadedTopTemplate = 1;
+    }
+    for my $piece (@topVHDPieces) {
+        generateTopVHDPiece($handle, $piece);
+    }
+}
+
+sub findISHW {
+    my $path = shift;
+    $path = $1 if $path =~ m!/(ISHW/.*?\z)!;
+    return $path;
+}
+
+sub removeBlocks {
+    my ($str,$kref) = (@_);
+    $str =~ s'@\[([^@:]+):(.*?):\1\]@\n?'$kref->{$1}?"$2":""'ges;  # GAH'
+    return $str;
+}
+
+sub mapCase {
+    my ($toMap,$basedOn) = @_;
+    $basedOn =~ s/@//g;
+
+    # Mixed case values with ALL CAP keys are untouched
+    if ($toMap =~ /[A-Z]/ && $toMap =~ /[a-z]/ && $basedOn =~ /^[A-Z]+$/) {
+        return $toMap;
+    }
+
+    my @to = split(//,$toMap);
+    my @from = split(//,$basedOn);
+    for (my $t = 0; $t < scalar(@to); ++$t) {
+        my $f = $t;
+        $f = scalar(@from)-1 if $f >= scalar(@from);
+        my $fch = $from[$f];
+        if ($fch =~ /[a-z]/) {
+            $to[$t] = lc($to[$t]);
+        } elsif ($fch =~ /[A-Z]/) {
+            $to[$t] = uc($to[$t]);
+        }
+    }
+    return join("",@to);
+}
+
+sub generateTopVHDPins {
+    my $ret = "";
+
+    my $pc = -1;
+    for my $wingpin (getList("_WINGPINS")) {
+        ++$pc;
+        my $padpc = (($pc<10)?"0":"").$pc;
+        
+        my $wing = getProp($wingpin,'wing');
+        my $wpin = getProp($wingpin,'wpin');
+        my $function = getAliasMatching($wingpin,'.._FACE_....');
+        my $decl;
+        if (!defined($function)) {
+            $decl = "
+
+  -- pin$padpc is GPIO
+  pin$padpc: IOPAD port map(I => gpio_o($pc),O => gpio_i($pc),T => gpio_t($pc),C => sysclk,PAD => WING_$wing($wpin) );\n";
+        } else {
+            my $func = getProp($function,'facefunc');
+            my $dir = getProp($func,'dir');
+            my $sig = getProp($function,'signal');
+            croak unless defined $sig;
+            if ($dir eq 'input') {
+                $decl = "\n  $sig <= WING_$wing($wpin);   -- pin$padpc: ISHW input; no IPAD sync";
+            } else {
+                $decl = "
+  pin$padpc: OPAD port map(I => $sig,PAD => WING_$wing($wpin) );  -- ISHW output";
+            }
+        }
+        $ret .= $decl;
+    
+    }
+    return $ret;
+}
+
+sub getSignalName {
+    my ($face, $func) = @_;
+    my $id = uc($face."_FACE_".$func);
+    my $sig = getProp($id,'signal');
+    croak "No signal for ($face, $func)" unless defined $sig;
+    return $sig;
+}
+
+sub substituteTopVHDVariable {
+    my ($key,$face,$fcode,$slot,$isMaster) = @_;
+
+    # Various large custom pieces
+    return generateTopVHDPins() if uc($key) eq '@GENPADS@';
+
+    # Various 'simple substitutions
+    return mapCase($timestamp,$key) if uc($key) eq '@DATE@';
+    return mapCase($whoami,$key) if uc($key) eq '@WHOAMI@';
+    return $scriptpath if uc($key) eq '@FILENAME@';
+    return findISHW("$scriptdir/$topTemplate") if uc($key) eq '@TEMPLATEPATH@';
+
+    return "" if uc($key) eq '@BYFACE@';
+    return "" if uc($key) eq '@BYSLOT@';
+
+    # Remaining keys require being in an iteration
+
+    if (defined($face)) {
+        my $name = getProp($face,'name');
+        return mapCase($face,$key) if uc($key) eq '@FACE@';
+        return mapCase($name,$key) if uc($key) eq '@FACENAME@';
+
+        return $fcode if uc($key) eq '@FACENUM@';
+        return $slot if uc($key) eq '@SLOT@';
+
+        return getSignalName($face,$1) if uc($key) =~ m'@FACESIG:([^@]+)@';
+    }
+
+    croak "Substitution '$key' unknown or used improperly (outside iteration perhaps?)";
+
+    return $key;
+}
+
+sub substituteTopVHDVariables {
+    my ($text,$face,$fcode,$slot,$isMaster) = @_;
+
+    $text =~ s'(@[^@]+@)\n?'substituteTopVHDVariable($1,$face,$fcode,$slot,$isMaster)'ge; #GAH' 
+    return $text;                                                  
+}
+
+my %faceMultiplierSubs = (
+    '@FACE@' =>    0b11111111,
+    '@FACENUM@' => 0b11111111,
+    '@SFACE@' =>   0b00001111,
+    '@SFACENUM@' =>0b00001111,
+    '@MFACE@' =>   0b11110000,
+    '@MFACENUM@' =>0b11110000,
+    );
+my $faceMultiplierRegex = '('.join("|",keys %faceMultiplierSubs).')';
+
+sub expandFacePiece {
+    my ($face,$tmpl) = @_;
+    my @faceCodes = getList(_DIRS);
+    my $code = $faceCodes[$face];
+
+    my $isMaster = getProp($code,'isMaster');
+    my $slot = getProp($code,'slot');
+    my %keys;
+    for (my $kf = 0; $kf < 8; ++$kf) {
+        $keys{$code} = ($kf==$face);  # select on face
+    }
+    $keys{M} = $isMaster;
+    $keys{S} = !$isMaster;
+
+    my $subs = removeBlocks($tmpl,\%keys);
+    $subs = substituteTopVHDVariables($subs,$code,$face,$slot,$isMaster);
+    return $subs;
+}
+
+sub generateTopVHDPiece {
+    my ($handle,$piece) = @_;
+
+    # Just barf totally literal pieces and beat it
+    return print $handle $piece if $piece !~ m'@';
+
+    # Detect if we are doing a FACE or SLOT iteration
+    if ($piece =~ m'@(BYFACE|BYSLOT)@') {
+        my $type = $1;
+        croak "Unimplemented $1" unless $type eq 'BYFACE';
+
+        # We are
+        my $tmpl = $piece;
+
+        $piece = "";
+        for (my $f = 0; $f < 8; ++$f) {
+            $piece .= expandFacePiece($f,$tmpl);
+        }
+    }        
+
+    # Finally, look for 'simple' substitutions
+    $piece = substituteTopVHDVariables($piece);
+
+    print $handle $piece;
+}
+
+##################
+##  Load files late, so all 'global lexicals' are in scope
+
+sub doMe {
+    my $file = shift;
+    my $content;
+    open FILE, '<', $file
+        or croak "$file: $!";
+    { local $/ = undef; $content = <FILE>; }
+    close FILE or croak "$file: $!";
+    $content =~ /(^.*$)/s;
+    $content = $1;              # Gah.
+
+    unless (my $return = eval $content) {
+        croak "couldn't parse $file: $@" if $@ ne "";
+        croak "couldn't eval $file: $!"    unless defined $return;
+        croak "couldn't run $file"       unless $return;
+    }
+    print STDERR "[Loaded $file]\n";
+}
+
+# Begin block to load names and aliases early, so we can later parse
+# them without quotes.
+
+BEGIN {
+    my $file = "./D8FW_names.dat";
+    doMe($file);
+}
+
+##################
+##  Running the whole show
+
 main(@ARGV);
 
 exit 0;
 
-
-my $outputDirectory = ".";
-croak "Usage: $0 [outputdirectory]" if scalar(@ARGV)>1;
-if (scalar(@ARGV) == 1) {
-    my $dir = shift @ARGV;
-    croak "Bad char(s) in arg '$dir'" unless $dir =~ m!^([\w/.]*?)/?$!;
-    $outputDirectory = $1;
-    croak "Not a directory '$outputDirectory'" unless -d $outputDirectory;
-}
-
-{
-    my $file = "$outputDirectory/";
-    open my $netcsv_fh, '>', $file or croak "$!";
-    printP2PCSV $netcsv_fh;
-    close $netcsv_fh or croak "$!";
-    print "Wrote $file\n";
-}
-{
-    my $file = "$outputDirectory/";
-    open my $netcsv_fh, '>', $file or croak "$!";
-
-    close $netcsv_fh or croak "$!";
-    print "Wrote $file\n";
-}
-{
-    my $file = "$outputDirectory/D8FWByFunc.csv";
-    open my $netcsv_fh, '>', $file or croak "$!";
-    printNetsCSV $netcsv_fh, sort { 
-        my $fa = getAliasMatching($a,'PP.._.._FACE_....') || "\177$a";  # Urgh, sort last..
-        my $fb = getAliasMatching($b,'PP.._.._FACE_....') || "\177$b";
-        $fa cmp $fb;
-    } getList("_IPINS");
-    close $netcsv_fh or croak "$!";
-    print "Wrote $file\n";
-}

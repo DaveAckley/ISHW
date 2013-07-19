@@ -10,20 +10,60 @@
 # to stand alone -- they do not have a unique prefix, for example.
 # They are meant to be used as components of larger names and as
 # property values.
+#
+# Note also that we have critical handwork here right at the top, in
+# the _SLOTS and _MASTERS assignments.  _SLOTS values determine which
+# IO SLOT is used for each device on the ZPUino device chain, which in
+# turn determines the 'minor' component of the device number as seen
+# by BaseDevice.h.  _SLOTS values are assigned using two criteria: (1)
+# To fit the available slots without renumbering existing devices, and
+# (2) To cause the device minor numbers to be the same as the face
+# codes.
+#
 
 name('_DIRS');
-#             0     1     2     3     4     5     6     7
-list('_DIRS','NT', 'NE', 'ET', 'SE', 'ST', 'SW', 'WT', 'NW' );
+name('_DIRNAMES');
+name('_SLOTS');
+name('_MASTERS');
+#                0     1     2     3     4     5     6     7
+list('_DIRS',   'NT', 'NE', 'ET', 'SE', 'ST', 'SW', 'WT', 'NW');
+list('_DIRNAMES',
+                'NorTh', 
+                      'NorthEast',
+                            'EasT', 
+                                  'SouthEast', 
+                                        'SouTh', 
+                                              'SouthWest', 
+                                                    'WesT', 
+                                                          'NorthWest');
+#list('_SLOTS',   11,   5,   12,    8,    9,   13,   10,   14  );
+list('_SLOTS',   5,    8,    9,   10,   11,   12,   13,   14  );
+list('_MASTERS', 1,    0,    1,    0,    0,    1,    0,    1  );
 
 {
     my @dirs = getList('_DIRS');
+    my @slots = getList('_SLOTS');
+    my @names = getList('_DIRNAMES');
+    my @ismast = getList('_MASTERS');
     for my $dir (@dirs) {
         name($dir);
     }
+    name('_SLOTNAMES');
+    for my $slot (@slots) {
+        my $sname = "SLOT$slot";
+        name($sname);
+        pushList('_SLOTNAMES',$sname);
+    }
+    my @slotnames = getList('_SLOTNAMES');
 
     my $count = scalar(@dirs);
     for (my $code = 0; $code < $count; ++$code) {
         props($dirs[$code],'value',$code,'mate',$dirs[($code+$count/2)%$count]);
+        props($dirs[$code],'slot',$slots[$code]);
+        props($dirs[$code],'isMaster',$ismast[$code]);
+        props($dirs[$code],'name',$names[$code]);
+
+        props($slotnames[$code],'dir', $code);
     }
 }
 
@@ -90,6 +130,18 @@ for (my $pin = 1; $pin <= $PPRO_FPGA_PIN_COUNT; ++$pin) {
     name($id);
     props($id, "num", $pin);
 }
+
+# Section 1.4.1 Papilio Pro wing pins
+#
+for my $wing ('A', 'B', 'C') {
+    for (my $pin = 0; $pin < 16; ++$pin) {
+        my $id = sprintf("WING_%s%02d",$wing,$pin);
+        name($id);
+        props($id, "wing", $wing, "wpin", $pin);
+    }
+}
+name("_WINGPINS");
+list("_WINGPINS",prefix("WING_"));
 
 alias("P48",'WING_A00');
 alias("P51",'WING_A01');
@@ -279,14 +331,14 @@ list('_FACE_Common',prefix('FACE_'));
 name('FACE_CKIS');   # ClocK Input (on Slave, input)
 name('FACE_CKOM');   # ClocK Output (on Master, output)
 
-props('FACE_CKIS','dir','input','mate','FACE_CKOM');
-props('FACE_CKOM','dir','output','mate','FACE_CKIS');
+props('FACE_CKIS','func','CKIS','dir','input','mate','FACE_CKOM');
+props('FACE_CKOM','func','CKOM','dir','output','mate','FACE_CKIS');
 
-props('FACE_LCKI','dir','input','mate','FACE_LCKO');
-props('FACE_LCKO','dir','output','mate','FACE_LCKI');
+props('FACE_LCKI','func','LCKI','dir','input','mate','FACE_LCKO');
+props('FACE_LCKO','func','LCKO','dir','output','mate','FACE_LCKI');
 
-props('FACE_DATI','dir','input','mate','FACE_DATO');
-props('FACE_DATO','dir','output','mate','FACE_DATI');
+props('FACE_DATI','func','DATI','dir','input','mate','FACE_DATO');
+props('FACE_DATO','func','DATO','dir','output','mate','FACE_DATI');
 
 # Section 1.8 Face pins to wing pins
 #
@@ -295,19 +347,27 @@ props('FACE_DATO','dir','output','mate','FACE_DATI');
 # First we generate the names of all the face pins, of the form
 # NT_FACE_DATO and so forth, distinguishing masters and slaves
 
-my @masters = ('NT', 'ET', 'NW', 'SW');
-my @slaves =  ('ST', 'WT', 'SE', 'NE');
-
-for my $m (@masters) {
-    name($m."_FACE_CKOM");
+my @dirs = getList("_DIRS");
+my @msts = getList("_MASTERS");
+for (my $i = 0; $i < 8; ++$i) {
+    my $n = $dirs[$i];
+    my $ism = $msts[$i];
+    my $f = $ism?"CKOM":"CKIS";
+    my $ff = "FACE_$f";
+    my $id = $n."_".$ff;
+    name($id);
+    my $sid = lc("ishw_${n}_$f");
+    props($id,'facefunc',$ff,'signal',$sid);
+    name($sid);
+    props($sid,'face',$n,'func',$f);
     for my $common (getList('_FACE_Common')) {
-         name($m."_$common");
-    }
-}
-for my $s (@slaves) {
-    name($s."_FACE_CKIS");
-    for my $common (getList('_FACE_Common')) {
-        name($s."_$common");
+        $f = getProp($common,'func');
+        $id = $n."_$common";
+        name($id);
+        $sid = lc("ishw_${n}_$f");
+        props($id,'facefunc',$common,'signal',$sid);
+        name($sid);
+        props($sid,'face',$n,'func',$f);
     }
 }
 
