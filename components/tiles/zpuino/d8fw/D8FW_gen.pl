@@ -560,9 +560,6 @@ sub main {
 my $topTemplate = "ishw_papilio_pro_top.vhd.dat";
 my $loadedTopTemplate = 0;
 my @topVHDPieces;
-#my @ishwSlaveSlots = ('over');
-#my @ishwMasterSlots = ('ride', 'me');
-#my @ishwAllSlots;
 
 sub addPiece {
     push @topVHDPieces, @_;
@@ -572,8 +569,6 @@ sub generateTopVHD {
     my ($handle) = @_;
     if (!$loadedTopTemplate) {
         doMe("./$topTemplate");
-#        @ishwAllSlots = (@ishwSlaveSlots,@ishwMasterSlots);
-#        croak "Bad slots: '".join(",",@ishwAllSlots)."'" unless scalar @ishwAllSlots == 8;
         $loadedTopTemplate = 1;
     }
     for my $piece (@topVHDPieces) {

@@ -93,7 +93,7 @@ build-fpga-sim:	report-synth-path generate-bootloader copy-files rebuild-test-be
 
 zpu-core-library:	$(ISHW_CROSS_BUILD_DIR)/libzpucore.a
 
-build-d8fw:	FORCE
+build-d8fw:	$(ISHW_CROSS_BUILD_DIR)/d8fw/.exists FORCE
 	make -C $(_TILES_ZPUINO.DIR)/d8fw -f Makefile.sub
 
 clean-d8fw:	FORCE
