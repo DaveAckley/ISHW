@@ -106,10 +106,10 @@ $(ISHW_CROSS_BUILD_DIR)/libzpucore.a:	$(ISHW_CROSS_BUILD_DIR)/.exists $(ISHW_CRO
 generate-bootloader:	FORCE
 	@echo --- Generating bootloader for $(BIN_FILE_NAME)
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                               ;\
-	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
-	make -C ../../../bootloader/ -f Makefile.sim clean  > bootloader-generation.log 2>&1 ;\
+	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                                           ;\
+	make -C ../../../bootloader/ -f Makefile.sim clean  > bootloader-generation.log 2>&1         ;\
 	make -C ../../../bootloader/ -f Makefile.sim SKETCHBIN=$(BIN_FILE_NAME)  >> bootloader-generation.log 2>&1 || exit 11;\
-	echo "  Wrote" `wc -c <bootloader-generation.log` bytes to bootloader-generation.log
+	echo "[Wrote" `wc -c <bootloader-generation.log` "bytes to $(_TILES_ZPUINO.BOARD_DIR)/bootloader-generation.log]"
 
 copy-files:	generate-bootloader
 	@echo --- Copying files
