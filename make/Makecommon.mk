@@ -1,5 +1,5 @@
 # Export everything to everybody.  We just can't shut up.
-export
+#export
 
 ISHW_CONFIG_DIR:=$(ISHW_BASE_DIR)/config
 
@@ -53,6 +53,13 @@ report:	$(ISHW_REPORT_TARGETS)
 # Pattern rule to establish build directories
 $(ISHW_BUILD_BASE_DIR)/%/.exists:
 	@echo "[Creating directory $(dir $@)]"
+	@mkdir -p $(dir $@)
+	@date > $@
+
+# Pattern rule to build empty directories
+$(ISHW_BUILD_BASE_DIR)/%/.new:
+	@echo "[Recreating directory $(dir $@)]"
+	@rm -rf $(dir $@)
 	@mkdir -p $(dir $@)
 	@date > $@
 

@@ -21,7 +21,16 @@ ISHW_TARGETS_HELP+="make download-bin-file\n\tdownload a bin file with 'BIN_FILE
 ISHW_TARGETS_HELP+="make mfm\n\tbuild the basic MFM execution environment\n"
 
 _MFM_SKETCH_BUILD_DIR:=$(ISHW_BUILD_BASE_DIR)/components/mfm/sketch
-_MFM.SKETCHES:=demo-sketch mfm-sketch 
+_MFM.SKETCHES:=
+
+ISHW_CROSS_DEFINES+=-DMFM_BUILD_DATE='"$(shell date)"'
+ISHW_CROSS_DEFINES+=-DMFM_TIMESTAMP='"$(shell date +%s)"'
+
+demo-sketch:	FORCE
+	MY_SKETCH_DIR=$(_MFM.DIR)/templates/demo-sketch make my-sketch-dir
+
+mfm-sketch:	FORCE
+	MY_SKETCH_DIR=$(_MFM.DIR)/templates/mfm-sketch make my-sketch-dir
 
 check-mfm-path:	check-os-path
 
@@ -40,9 +49,11 @@ copy-my-sketch:	init-mySketch.cpp
 	exit 9 ; fi
 	cat $(MY_SKETCH) >>$(_MFM_SKETCH_BUILD_DIR)/mySketch.cpp
 
-init-mySketch.cpp:	FORCE
+init-build-dir:	FORCE
 	@rm -rf $(_MFM_SKETCH_BUILD_DIR)                                      
 	@mkdir -p $(_MFM_SKETCH_BUILD_DIR)                                     
+
+init-mySketch.cpp:	init-build-dir
 	@echo "#include <Arduino.h>" > $(_MFM_SKETCH_BUILD_DIR)/mySketch.cpp
 
 my-sketch-dir:	copy-my-sketch-dir $(_MFM_SKETCH_BUILD_DIR)/libmysketch.a
@@ -56,23 +67,22 @@ copy-my-sketch-dir:	init-mySketch.cpp
 	cp $$f $(_MFM_SKETCH_BUILD_DIR); done
 
 $(_MFM_SKETCH_BUILD_DIR)/libmysketch.a:	FORCE
-	cd $(_MFM_SKETCH_BUILD_DIR) ;\
+	@cd $(_MFM_SKETCH_BUILD_DIR) ;\
 	CPPS=`echo *.cpp`;\
 	OBJCPPS=;\
 	if [ "$$CPPS" != "*.cpp" ] ;\
 	then \
-	  $(CROSS_CPP) -c $(ISHW_CROSS_CPPFLAGS) $(ISHW_CROSS_INCLUDES) $$CPPS ;\
-	  for s in $$CPPS ; do echo "EE($$s)";OBJCPPS="$$OBJCPPS $${s%.cpp}.o" ; done \
+	  $(CROSS_CPP) -c $(ISHW_CROSS_DEFINES) $(ISHW_CROSS_CPPFLAGS) $(ISHW_CROSS_INCLUDES) $$CPPS ;\
+	  for s in $$CPPS ; do OBJCPPS="$$OBJCPPS $${s%.cpp}.o" ; done \
 	fi ;\
 	CS=`echo *.c` ;\
 	OBJCS= ;\
 	if [ "$$CS" != "*.c" ] ;\
 	then \
-	  $(CROSS_GCC) -c $(ISHW_CROSS_CFLAGS) $(ISHW_CROSS_INCLUDES) $$CS ;\
-	  for s in $$CS ; do echo "DOC($$s)"; OBJCS="$$OBJCS $${s%.c}.o" ; done \
+	  $(CROSS_GCC) -c $(ISHW_CROSS_DEFINES) $(ISHW_CROSS_CFLAGS) $(ISHW_CROSS_INCLUDES) $$CS ;\
+	  for s in $$CS ; do OBJCS="$$OBJCS $${s%.c}.o" ; done \
 	fi ;\
 	OBJS="$$OBJCPPS $$OBJCS" ;\
-	echo "OBJS=$$OBJS" ;\
 	$(CROSS_AR) $(ISHW_CROSS_ARFLAGS) $@ $$OBJS >$@.log
 	@echo Built $@
 
@@ -91,10 +101,10 @@ download-my-sketch-dir:	my-sketch-dir
 download-%:	$(_MFM_SKETCH_BUILD_DIR)/%.bin 
 	BIN_FILE_NAME=$< make download-bin-file
 
-fpga-sim-%:	$(_MFM_SKETCH_BUILD_DIR)/%.bin 
+fpga-sim-%:	$(_MFM_SKETCH_BUILD_DIR)/%.bin % 
 	BIN_FILE_NAME=$< make run-fpga-sim
 
-fpga-build-%:	$(_MFM_SKETCH_BUILD_DIR)/%.bin 
+fpga-build-%:	$(_MFM_SKETCH_BUILD_DIR)/%.bin % 
 	BIN_FILE_NAME=$< make build-fpga-sim
 
 .PHONY:	$(_MFM.SKETCHES)
@@ -114,17 +124,13 @@ $(_MFM_SKETCH_BUILD_DIR)/%.elf:	$(_MFM_SKETCH_BUILD_DIR)/libmysketch.a zpu-core-
 	@echo Built $@
 
 $(_MFM_SKETCH_BUILD_DIR)/%.o:	$(_MFM_SKETCH_BUILD_DIR)/%.cpp $(ISHW_ALL_DEP)
-	@$(CROSS_CPP) -c $(ISHW_CROSS_CPPFLAGS) $(ISHW_CROSS_INCLUDES) $< -o $@ >$@.log
+	@$(CROSS_CPP) -c $(ISHW_CROSS_DEFINES) $(ISHW_CROSS_CPPFLAGS) $(ISHW_CROSS_INCLUDES) $< -o $@ >$@.log
 	@echo Built $@
 
 $(_MFM_SKETCH_BUILD_DIR)/%.o:	$(_MFM_SKETCH_BUILD_DIR)/%.c $(ISHW_ALL_DEP)
-	@$(CROSS_GCC) -c $(ISHW_CROSS_CFLAGS) $(ISHW_CROSS_INCLUDES) $< -o $@ >$@.log
+	@$(CROSS_GCC) -c $(ISHW_CROSS_DEFINES) $(ISHW_CROSS_CFLAGS) $(ISHW_CROSS_INCLUDES) $< -o $@ >$@.log
 	@echo Built $@
 
 $(_MFM_SKETCH_BUILD_DIR)/demo-sketch.cpp: $(_MFM_SKETCH_BUILD_DIR)/.exists $(ISHW_ALL_DEP)
-	@echo -e '#include <Arduino.h>\nvoid setup() { Serial.begin(115200); }\nvoid loop() { static int count = 0; Serial.print("ds' `date +%s` '"); Serial.println(++count); }\n' > $@
-	@echo Built $@
 
 $(_MFM_SKETCH_BUILD_DIR)/mfm-sketch.cpp: $(_MFM_SKETCH_BUILD_DIR)/.exists $(ISHW_ALL_DEP)
-	@echo -e '#include <MFM.h>\nvoid setup() { Serial.begin(115200); }\nvoid loop() { static int count = 0; Serial.print("mfm' `date +%s` '"); Serial.println(++count); }\n' > $@
-	@echo Built $@
