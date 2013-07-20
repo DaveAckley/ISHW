@@ -589,7 +589,8 @@ END_OF_PIECE
 my $ishwCommonFormat = <<'END_OF_FORMAT';
 
   --
-  -- IO SLOT @SLOT@ 
+  -- IO SLOT @SLOT@
+
   --
 
   slot@SLOT@: ishw_%s
@@ -683,6 +684,8 @@ addPiece(<<'END_OF_PIECE');
 
 END_OF_PIECE
 addPiece(<<'END_OF_PIECE');
+
+
   --
   -- IO SLOT 7
   --
@@ -701,7 +704,6 @@ addPiece(<<'END_OF_PIECE');
     wb_inta_o     => slot_interrupt(7),
     id            => slot_id(7)
   );
-
 END_OF_PIECE
 
 genIOSlots(8);
@@ -737,12 +739,12 @@ addPiece(<<'END_OF_PIECE');
 
     );
     DRAM_ADDR(12) <= '0';
-
 END_OF_PIECE
 
 genIOSlots(9..14);
 
 addPiece(<<'END_OF_PIECE');
+
   --
   -- IO SLOT 15 - do not use
   --
