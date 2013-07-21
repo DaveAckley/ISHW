@@ -18,6 +18,7 @@ dieUsage if scalar(@ARGV) != 1;
 dieUsage "Not a number" unless $ARGV[0] =~ /^([1-9][0-9]*)$/;
 
 my $count = $1;
+my $countm1 = $count-1;
 my $timestamp = scalar(localtime());
 my $whoami = getlogin || getpwuid($<) || "unknown";
 
@@ -82,16 +83,15 @@ end entity wbarb${count}_1;
 
 architecture behave of wbarb${count}_1 is
 
-signal current_master : std_logic_vector(${count} downto 1);
-signal next_master : std_logic_vector(${count} downto 1);
+signal current_master : integer range 0 to ${countm1};
+signal next_master : integer range 0 to ${countm1};
 begin
 
 process(wb_clk_i)
 begin
   if rising_edge(wb_clk_i) then
     if wb_rst_i='1' then
-      current_master <= (others => '0');
-      current_master(1) <= '1';
+      current_master <= 0;
     else
       current_master <= next_master;
     end if;
@@ -112,14 +112,12 @@ begin
   case current_master is
 END_OF_PIECE
 for (my $i = 0; $i < $count; ++$i) {
-    my $val = '0'x($count-$i-1).'1'.'0'x$i;
     my $ip1 = ($i+1)<$count?$i+1:0;
-    my $val1 = '0'x($count-$ip1-1).'1'.'0'x$ip1;
 print <<END_OF_PIECE;
-    when "${val}" =>
+    when $i =>
       if m${i}_wb_cyc_i='0' then
         if m${ip1}_wb_cyc_i='1' then
-          next_master <= "${val1}";
+          next_master <= $ip1;
         end if;
       end if;
 END_OF_PIECE
@@ -144,11 +142,9 @@ begin
 END_OF_PIECE
 
 for (my $i = 0; $i < $count; ++$i) {
-    my $val = '0'x($count-$i-1).'1'.'0'x$i;
     my $ip1 = ($i+1)<$count?$i+1:0;
-    my $val1 = '0'x($count-$ip1-1).'1'.'0'x$ip1;
     print <<END_OF_PIECE;
-    when "${val}" =>
+    when $i =>
       s0_wb_dat_o <= m${i}_wb_dat_i;
       s0_wb_adr_o <= m${i}_wb_adr_i;
       s0_wb_sel_o <= m${i}_wb_sel_i;
@@ -178,12 +174,10 @@ print <<END_OF_PIECE;
 
 END_OF_PIECE
 for (my $i = 0; $i < $count; ++$i) {
-    my $val = '0'x($count-$i-1).'1'.'0'x$i;
     my $ip1 = ($i+1)<$count?$i+1:0;
-    my $val1 = '0'x($count-$ip1-1).'1'.'0'x$ip1;
     print <<END_OF_PIECE;
-m${i}_wb_ack_o <= s0_wb_ack_i when current_master="${val}" else '0';
-m${i}_wb_stall_o <= s0_wb_stall_i when current_master="${val}" else '1';
+m${i}_wb_ack_o <= s0_wb_ack_i when current_master=$i else '0';
+m${i}_wb_stall_o <= s0_wb_stall_i when current_master=$i else '1';
 END_OF_PIECE
         }
 print <<END_OF_PIECE;
