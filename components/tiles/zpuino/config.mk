@@ -40,7 +40,8 @@ ISHW_CROSS_OBJS:=$(ISHW_CROSS_CPP_OBJS) $(ISHW_CROSS_C_OBJS) $(ISHW_CROSS_ASM_OB
 # variables and targets MUST use a prefix formed by '_' plus the path
 # below 'components' (e.g., _tiles_zpuino_foo, _TILES_ZPUINO_BAR)
 
-_TILES_ZPUINO.BOARD_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl/zpuino/boards/papilio-pro/S6LX9
+_TILES_ZPUINO.HDL_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl
+_TILES_ZPUINO.BOARD_DIR:=$(_TILES_ZPUINO.HDL_DIR)/zpuino/boards/papilio-pro/S6LX9
 _TILES_ZPUINO.BOARD_NAME:=papilio_pro
 
 _TILES_ZPUINO.PROGRAMMER_SRC_DIR:=$(_TILES_ZPUINO.DIR)/board/zpu/hdl/zpuino/programmer
@@ -52,6 +53,7 @@ _TILES_ZPUINO.PAPILIO_PROG_BASE_DIR:=$(_TILES_ZPUINO.DIR)/synth/Papilio-Loader
 _TILES_ZPUINO.PAPILIO_PROG_SRC_DIR:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/papilio-prog
 _TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE:=$(_TILES_ZPUINO.PAPILIO_PROG_BASE_DIR)/Java-GUI/programmer/bscan_spi_xc6slx9.bit
 
+_TILES_ZPUINO.SYNTH_BUILD_DIR:=$(ISHW_BUILD_BASE_DIR)/synth
 _TILES_ZPUINO.SYNTH_BITFILE_PATH:=$(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/$(_TILES_ZPUINO.BOARD_NAME)_routed.bit
 
 
@@ -110,17 +112,17 @@ copy-files:	generate-bootloader
 
 synth:	report-synth-path $(_TILES_ZPUINO.SYNTH_BITFILE_PATH)
 
-$(_TILES_ZPUINO.SYNTH_BITFILE_PATH):
-	@echo --- Starting synthesis at `date`
+$(_TILES_ZPUINO.SYNTH_BITFILE_PATH):	$(_TILES_ZPUINO.SYNTH_BUILD_DIR)/.exists
+	@echo "[Starting synthesis at" `date` "logging to" $(_TILES_ZPUINO.SYNTH_BUILD_DIR)/synthesis.log "]"
 	@cd $(_TILES_ZPUINO.BOARD_DIR)                                                 ;\
 	start=$$(date +"%s")                                                           ;\
 	export PATH=$(ISHW_CROSS_TOOLCHAIN_BIN_DIR):$$PATH                             ;\
 	. "$(ZPUINO_SYNTH_PATH)/ISE/.settings64.sh" "$(ZPUINO_SYNTH_PATH)/ISE"         ;\
-	make -f Makefile > synthesis.log 2>&1 || exit 11                               ;\
+	make -f Makefile > $(_TILES_ZPUINO.SYNTH_BUILD_DIR)/synthesis.log 2>&1 || exit 11                               ;\
 	cp $(_TILES_ZPUINO.BOARD_NAME)_routed.bit $(_TILES_ZPUINO.BOARD_NAME)_routed.bin $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR) ;\
 	stop=$$(date +"%s")                                                            ;\
 	diff=$$(($$stop-$$start))                                                      ;\
-	echo "  Wrote" `wc -c <synthesis.log` bytes to synthesis.log                   ;\
+	echo "  Wrote" `wc -c <synthesis.log` bytes to $(_TILES_ZPUINO.SYNTH_BUILD_DIR)/synthesis.log                   ;\
 	echo -e --- Synthesis took `date -u -d @"$$diff" +'%-Mm %-Ss'` "\n"
 
 download-synth-file:	$(_TILES_ZPUINO.SYNTH_BITFILE_PATH) $(_TILES_ZPUINO.PROGRAMMER_INSTALL_DIR)/papilio-prog $(_TILES_ZPUINO.PAPILIO_PROG_BSCAN_FILE) kill-minicom

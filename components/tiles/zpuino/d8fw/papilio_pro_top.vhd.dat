@@ -1,6 +1,7 @@
 ######
 # Assemble the output by pieces, with various substitutions
 
+clearPieces();
 addPiece(<<'END_OF_PIECE');
 -- 
 -- THIS IS A GENERATED FILE, DO NOT EDIT!  INSTEAD, MAKE CHANGES IN

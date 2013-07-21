@@ -8,7 +8,9 @@ my %knownFiles = (
     'D8FWPin2Pin.csv' => \&printP2PCSV,
     'D8FWByPin.csv' => \&printNetsByPin,
     'D8FWByFunc.csv' => \&printNetsByFunc,
-    'ishw_papilio_pro_top.vhd' => \&generateTopVHD,
+    'papilio_pro_top.vhd' => \&generateTopVHD,
+    'wbarb8_1.vhd' => './wbarbN_1.vhd.pl 8',
+    'zpuinopkg.vhd' => './zpuinopkg.vhd.pl 8',
     );
 
 use Cwd "abs_path";  # for abs_path
@@ -545,7 +547,12 @@ sub main {
         my $filename = "$optdir/$file";
         open my $fh, '>', $filename
             or dieUsage("$filename: $!");
-        $cref->($fh);
+        if (ref $cref) {
+            $cref->($fh);
+        } else {
+            print "[Running $cref]\n";
+            generateFromScript($fh,$cref);
+        }
         close $fh or croak "$!";
 
         print "[Wrote $filename]\n";
@@ -557,9 +564,13 @@ sub main {
 ##################
 ##  Generating top
 
-my $topTemplate = "ishw_papilio_pro_top.vhd.dat";
+my $topTemplate = "papilio_pro_top.vhd.dat";
 my $loadedTopTemplate = 0;
 my @topVHDPieces;
+
+sub clearPieces {
+    @topVHDPieces = ();
+}
 
 sub addPiece {
     push @topVHDPieces, @_;
@@ -574,6 +585,11 @@ sub generateTopVHD {
     for my $piece (@topVHDPieces) {
         generateTopVHDPiece($handle, $piece);
     }
+}
+
+sub generateFromScript {
+    my ($handle,$scriptCmd) = @_;
+    print $handle `$scriptCmd`;
 }
 
 sub findISHW {
@@ -775,6 +791,9 @@ sub doMe {
 # them without quotes.
 
 BEGIN {
+    $ENV{'PATH'} = '/bin:/usr/bin';
+    delete @ENV{'IFS', 'CDPATH', 'ENV', 'BASH_ENV'};
+
     my $file = "./D8FW_names.dat";
     doMe($file);
 }
