@@ -14,4 +14,4 @@ For more information and background, see for example
 Repository structure
 --------------------
 
-TO COME.
+TO COME. (Or Not.)
